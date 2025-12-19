@@ -1,0 +1,28 @@
+# Configuración para Render.com
+# Este archivo define cómo desplegar tu aplicación en Render
+
+services:
+  # Backend (API Node.js + SQLite)
+  - type: web
+    name: psicologa-backend
+    env: node
+    plan: free  # Puedes cambiar a 'starter' o 'standard' si necesitas más recursos
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+    # Render creará automáticamente un disco persistente para la base de datos SQLite
+    # Asegúrate de que la ruta de la base de datos sea relativa o use una variable de entorno
+
+  # Frontend (sitio estático)
+  - type: web
+    name: psicologa-frontend
+    env: static
+    buildCommand: echo "No build needed for static site"
+    staticPublishPath: .
+    # Render servirá los archivos estáticos desde la raíz del repositorio
+    # Asegúrate de actualizar la URL del backend en app.js después del primer deploy
+

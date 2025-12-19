@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Código QR - Psicóloga</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      padding: 3rem;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    h1 {
+      color: #1a202c;
+      margin-bottom: 1rem;
+      font-size: 2rem;
+    }
+    p {
+      color: #4a5568;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    .input-group {
+      margin-bottom: 2rem;
+    }
+    label {
+      display: block;
+      color: #2d3748;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+    #qr-container {
+      margin-top: 2rem;
+      text-align: center;
+      padding: 2rem;
+      background: #f7fafc;
+      border-radius: 8px;
+      display: none;
+    }
+    #qr-code {
+      margin: 1rem auto;
+      display: block;
+    }
+    .download-btn {
+      margin-top: 1rem;
+      background: #48bb78;
+    }
+    .download-btn:hover {
+      background: #38a169;
+    }
+    .warning {
+      background: #fff5f5;
+      border-left: 4px solid #fc8181;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 4px;
+      color: #742a2a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔲 Generador de Código QR</h1>
+    <p>
+      Ingresa la URL final de tu aplicación (la URL del frontend en Render).
+      Este código QR será permanente y podrás imprimirlo.
+    </p>
+    
+    <div class="input-group">
+      <label for="url-input">URL de la aplicación:</label>
+      <input 
+        type="url" 
+        id="url-input" 
+        placeholder="https://psicologa-frontend.onrender.com"
+        value=""
+      />
+    </div>
+    
+    <button onclick="generateQR()">Generar Código QR</button>
+    
+    <div id="qr-container">
+      <h2 style="margin-bottom: 1rem; color: #2d3748;">Tu código QR está listo</h2>
+      <canvas id="qr-code"></canvas>
+      <button class="download-btn" onclick="downloadQR()">Descargar QR como imagen</button>
+    </div>
+    
+    <div class="warning" style="display: none;" id="warning">
+      ⚠️ Asegúrate de que esta sea la URL final y definitiva. Si cambias la URL después de imprimir el QR, tendrás que generar uno nuevo.
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script>
+    let currentQRDataURL = null;
+
+    function generateQR() {
+      const url = document.getElementById('url-input').value.trim();
+      
+      if (!url) {
+        alert('Por favor, ingresa una URL válida');
+        return;
+      }
+
+      // Validar que sea una URL válida
+      try {
+        new URL(url);
+      } catch (e) {
+        alert('Por favor, ingresa una URL válida (debe comenzar con http:// o https://)');
+        return;
+      }
+
+      const canvas = document.getElementById('qr-code');
+      const container = document.getElementById('qr-container');
+      const warning = document.getElementById('warning');
+
+      // Generar el código QR
+      QRCode.toCanvas(canvas, url, {
+        width: 400,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      }, function (error) {
+        if (error) {
+          console.error(error);
+          alert('Error al generar el código QR. Por favor, intenta de nuevo.');
+          return;
+        }
+
+        // Convertir canvas a imagen para descarga
+        currentQRDataURL = canvas.toDataURL('image/png');
+        container.style.display = 'block';
+        warning.style.display = 'block';
+      });
+    }
+
+    function downloadQR() {
+      if (!currentQRDataURL) {
+        alert('Primero genera el código QR');
+        return;
+      }
+
+      const url = document.getElementById('url-input').value.trim();
+      const link = document.createElement('a');
+      link.download = 'codigo-qr-psicologa.png';
+      link.href = currentQRDataURL;
+      link.click();
+    }
+
+    // Permitir generar con Enter
+    document.getElementById('url-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        generateQR();
+      }
+    });
+  </script>
+</body>
+</html>
+

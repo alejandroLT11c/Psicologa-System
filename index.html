@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Agendamiento Psicológico - Cooperativa Urbanos Pereira</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="top-bar">
+      <div class="brand">
+        <img src="cooperativa urbanos.png" alt="Logo Cooperativa Urbanos Pereira" class="logo" />
+        <div class="brand-text">
+          <span class="coop-name">COOPERATIVA URBANOS PEREIRA</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span id="user-display" class="user-display hidden"></span>
+        <div class="role-switch">
+          <button id="profile-btn" class="role-btn hidden" type="button">Perfil</button>
+        </div>
+        <button id="logout-btn" class="logout-btn hidden" type="button">
+          Cerrar sesión
+        </button>
+        <button id="refresh-btn" class="refresh-btn" type="button" aria-label="Recargar página">
+          ↻
+        </button>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Cambiar tema a oscuro">
+          <!-- icono manejado por CSS -->
+        </button>
+      </div>
+    </header>
+
+    <!-- Overlay de autenticación (login / registro) -->
+    <div id="auth-overlay" class="auth-overlay">
+      <div class="auth-card">
+        <div class="auth-header-row">
+          <h2 class="auth-title">Bienvenido</h2>
+          <button type="button" class="theme-toggle auth-theme-toggle" aria-label="Cambiar tema">
+            <!-- icono manejado por CSS -->
+          </button>
+        </div>
+        <p class="auth-subtitle">
+          Inicia sesión o crea tu cuenta para agendar una cita con la psicóloga.
+        </p>
+
+        <div class="auth-tabs">
+          <button id="auth-tab-login" class="auth-tab active" type="button">Iniciar sesión</button>
+          <button id="auth-tab-register" class="auth-tab" type="button">Registrarme</button>
+        </div>
+
+        <form id="login-form" class="auth-form">
+          <div class="auth-field-group">
+            <label for="login-email">Correo electrónico</label>
+            <input id="login-email" type="email" autocomplete="email" required />
+          </div>
+          <div class="auth-field-group">
+            <label for="login-password">Contraseña</label>
+            <input id="login-password" type="password" autocomplete="current-password" required />
+          </div>
+          <div class="auth-field-group auth-remember">
+            <label class="remember-label">
+              <input id="login-remember" type="checkbox" checked />
+              Mantener sesión iniciada en este equipo
+            </label>
+          </div>
+          <button type="submit" class="btn btn-primary auth-submit">Iniciar sesión</button>
+        </form>
+
+        <form id="register-form" class="auth-form hidden">
+          <div class="auth-field-group">
+            <label for="register-name">Nombre completo</label>
+            <input id="register-name" type="text" autocomplete="name" required />
+          </div>
+          <div class="auth-field-group">
+            <label for="register-email">Correo electrónico</label>
+            <input id="register-email" type="email" autocomplete="email" required />
+          </div>
+          <div class="auth-field-group">
+            <label for="register-phone">Teléfono</label>
+            <input id="register-phone" type="tel" autocomplete="tel" required />
+          </div>
+          <div class="auth-field-group">
+            <label for="register-password">Contraseña</label>
+            <input id="register-password" type="password" autocomplete="new-password" required />
+          </div>
+          <button type="submit" class="btn btn-primary auth-submit">Crear cuenta</button>
+          <p class="auth-helper">
+            Tus datos se usan únicamente para gestionar tus citas con la psicóloga.
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <main class="main">
+      <section class="welcome-section hero-section" id="welcome-paciente">
+        <div class="hero-text">
+          <h1 class="hero-title">Bienvenido a tu espacio de cuidado emocional</h1>
+          <p>
+            Tu bienestar mental es tan importante como tu bienestar físico. Cada pensamiento,
+            emoción y experiencia que vives merece ser escuchada con respeto y confidencialidad.
+          </p>
+          <p>
+            Al agendar tu cita estás dando un paso valiente hacia una vida más tranquila,
+            consciente y equilibrada. Este espacio ha sido creado para ti: para que puedas hablar
+            sin juicios, encontrar herramientas para manejar tus emociones y reconectarte contigo mismo.
+          </p>
+          <p class="welcome-cta"><strong>Tómate una hora para ti. Tu salud mental lo merece.</strong></p>
+        </div>
+        <div class="hero-visual hero-visual-paciente"></div>
+      </section>
+
+      <section class="welcome-section hero-section hidden" id="welcome-admin">
+        <div class="hero-text">
+          <h1 class="hero-title">Organiza tu agenda con tranquilidad</h1>
+          <p>
+            Desde aquí podrás organizar tu agenda, confirmar o rechazar solicitudes de cita
+            y deshabilitar días en los que no estés disponible.
+          </p>
+          <p>
+            El calendario refleja en tiempo real las citas pedidas por los usuarios
+            y te ayuda a mantener un orden claro y amable con tu tiempo y el de tus pacientes.
+          </p>
+        </div>
+        <div class="hero-visual hero-visual-admin"></div>
+      </section>
+
+      <section class="profile-section">
+        <div class="profile-card">
+          <div class="profile-avatar">
+            <div class="avatar-circle">P</div>
+          </div>
+          <div class="profile-info">
+            <h2>Psicóloga Valentina</h2>
+            <p class="profile-role">Psicóloga Clínica - Cooperativa Urbanos Pereira</p>
+            <p class="profile-desc">
+              Especialista en salud mental, acompañamiento emocional y manejo del estrés.
+              Atención cálida, confidencial y centrada en tus necesidades.
+            </p>
+            <p class="profile-contact">
+              Teléfono: <a href="tel:3001234567">300 123 4567</a> ·
+              Correo: <a href="mailto:valentina@coopurbanospereira.com">valentina@coopurbanospereira.com</a>
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="calendar-layout">
+        <div class="calendar-card">
+          <div class="calendar-header">
+            <button id="prev-month" class="nav-month" aria-label="Mes anterior">&lt;</button>
+            <div class="month-label" id="month-label">Mes Año</div>
+            <button id="next-month" class="nav-month" aria-label="Mes siguiente">&gt;</button>
+          </div>
+          <div class="calendar-legend">
+            <span><span class="legend-box today"></span> Día actual</span>
+            <span><span class="legend-box disabled"></span> Día deshabilitado</span>
+            <span><span class="legend-box pending"></span> Citas pendientes</span>
+            <span><span class="legend-box confirmed"></span> Citas confirmadas</span>
+          </div>
+          <div class="calendar-grid" id="calendar-grid">
+            <!-- Calendario generado por JavaScript -->
+          </div>
+        </div>
+
+        <div class="side-panel">
+          <div id="panel-paciente" class="panel-grid">
+            <!-- Columna 1: Agendar cita -->
+            <div class="panel-col">
+              <h2>Agendar cita</h2>
+              <p class="side-panel-text">
+                Selecciona un día en el calendario para ver los horarios disponibles
+                entre <strong>8:00 a.m.</strong> y <strong>5:00 p.m.</strong>
+              </p>
+              <div class="selected-day" id="selected-day-text">Ningún día seleccionado</div>
+              <div class="time-slots" id="time-slots">
+                <!-- Horarios para el paciente -->
+              </div>
+            </div>
+
+            <!-- Columna 2: Mis citas -->
+            <div class="panel-col">
+              <h3>Mis citas</h3>
+              <div class="appointments-list" id="patient-appointments">
+                <!-- Lista de citas del paciente -->
+              </div>
+            </div>
+
+            <!-- Columna 3: Notificaciones usuario -->
+            <div class="panel-col">
+              <h3>Notificaciones</h3>
+              <div class="notifications-list" id="patient-notifications">
+                <!-- Notificaciones al paciente -->
+              </div>
+            </div>
+          </div>
+
+          <div id="panel-admin" class="panel-grid hidden">
+            <!-- Columna 1: Gestión del día + horas -->
+            <div class="panel-col">
+              <h2>Gestión del día seleccionado</h2>
+              <p class="side-panel-text">
+                Selecciona un día en el calendario para ver y gestionar las citas.
+              </p>
+              <div class="selected-day" id="admin-selected-day-text">Ningún día seleccionado</div>
+              <button id="toggle-day" class="btn-toggle-day" disabled>
+                Deshabilitar día completo
+              </button>
+
+              <h3>Horas del día</h3>
+              <p class="side-panel-text side-panel-text-small">
+                Haz clic en una hora para deshabilitarla o habilitarla. Las horas deshabilitadas
+                aparecerán en gris para los usuarios.
+              </p>
+              <div class="time-slots admin-time-slots" id="admin-time-slots">
+                <!-- Horas administrables por la psicóloga -->
+              </div>
+            </div>
+
+            <!-- Columna 2: Citas de este día -->
+            <div class="panel-col">
+              <h3>Citas de este día</h3>
+              <div class="appointments-list" id="admin-appointments">
+                <!-- Lista de citas para la administradora -->
+              </div>
+            </div>
+
+            <!-- Columna 3: Notificaciones psicóloga -->
+            <div class="panel-col">
+              <h3>Notificaciones</h3>
+              <div class="notifications-list" id="admin-notifications">
+                <!-- Notificaciones para la psicóloga -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="loading-content">
+      <img src="cooperativa urbanos.png" alt="Logo Cooperativa Urbanos Pereira" class="loading-logo" />
+      <div class="loading-text">Cargando...</div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <div id="modal-backdrop" class="modal-backdrop hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Agendar cita</h2>
+        <button id="modal-close" class="modal-close">&times;</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- Contenido dinámico del modal -->
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
+
+

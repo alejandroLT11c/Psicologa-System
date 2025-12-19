@@ -1,0 +1,41 @@
+# Dependencias
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Base de datos SQLite (se creará en el servidor)
+backend/database.sqlite
+backend/database.sqlite-journal
+backend/database.sqlite-wal
+backend/database.sqlite-shm
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Variables de entorno (si las usas)
+.env
+.env.local
+
+# Logs
+logs/
+*.log
+
+# Archivos temporales
+tmp/
+temp/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build
+dist/
+build/
+
