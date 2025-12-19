@@ -792,16 +792,22 @@ body.dark-theme .auth-helper {
   flex-direction: column;
 }
 
-/* Forma de corazón completa usando clip-path */
+/* Sobrescribir estilos para los corazones */
+.calendar-cell.calendar-heart {
+  border-radius: 0; /* Sin border-radius para que el clip-path funcione */
+  padding: 0; /* Sin padding para que el clip-path funcione correctamente */
+}
+
+/* Forma de corazón completa usando clip-path - TODOS los días */
 .calendar-heart {
-  background: #ffffff;
+  background: #ffb3d9; /* Rosa claro para todos los días */
   border: none;
   position: relative;
   overflow: hidden;
-  /* Clip-path para dar forma de corazón */
-  /* El path se escala automáticamente al tamaño del contenedor */
-  clip-path: path("M50 85 L45 80 C20 55, 5 40, 5 25 C5 15, 12 8, 22 8 C30 8, 36 12, 40 18 C44 12, 50 8, 58 8 C68 8, 75 15, 75 25 C75 40, 60 55, 35 80 Z");
-  -webkit-clip-path: path("M50 85 L45 80 C20 55, 5 40, 5 25 C5 15, 12 8, 22 8 C30 8, 36 12, 40 18 C44 12, 50 8, 58 8 C68 8, 75 15, 75 25 C75 40, 60 55, 35 80 Z");
+  /* Clip-path para dar forma de corazón perfecto - path cerrado sin puntitas */
+  /* Path optimizado: corazón simétrico y suave */
+  clip-path: path("M50 85 L45 80 C20 55, 5 40, 5 25 C5 15, 12 8, 22 8 C30 8, 36 12, 40 18 C44 12, 50 8, 58 8 C68 8, 75 15, 75 25 C75 40, 60 55, 35 80 L50 85 Z");
+  -webkit-clip-path: path("M50 85 L45 80 C20 55, 5 40, 5 25 C5 15, 12 8, 22 8 C30 8, 36 12, 40 18 C44 12, 50 8, 58 8 C68 8, 75 15, 75 25 C75 40, 60 55, 35 80 L50 85 Z");
   /* Asegurar que el contenido se mantenga dentro */
   display: flex;
   flex-direction: column;
@@ -823,11 +829,16 @@ body.dark-theme .auth-helper {
   z-index: 1;
   font-weight: 600;
   text-align: center;
+  color: #333;
 }
 
-/* Colores según estado de citas */
+/* Colores según estado de citas - sobre el rosa claro base */
 .calendar-heart.heart-pending {
   background: #ffd633; /* Amarillo para pendientes */
+}
+
+.calendar-heart.heart-pending .day-number {
+  color: #333;
 }
 
 .calendar-heart.heart-confirmed {
@@ -850,7 +861,8 @@ body.dark-theme .auth-helper {
 }
 
 .calendar-heart:hover:not(.empty):not(.disabled):not(.past):not(.heart-pending):not(.heart-confirmed) {
-  background: #e3f8ea;
+  background: #ff99cc; /* Rosa un poco más oscuro al hover */
+  transform: translateY(-2px) scale(1.05);
 }
 
 .calendar-cell .day-number {
@@ -863,12 +875,24 @@ body.dark-theme .auth-helper {
   animation: pulseToday 2.2s ease-in-out infinite;
 }
 
+.calendar-heart.today .day-number {
+  color: #ffffff;
+}
+
 .calendar-heart.today.heart-pending {
   background: #ffd633;
 }
 
+.calendar-heart.today.heart-pending .day-number {
+  color: #333;
+}
+
 .calendar-heart.today.heart-confirmed {
   background: #22c55e;
+}
+
+.calendar-heart.today.heart-confirmed .day-number {
+  color: #ffffff;
 }
 
 .calendar-heart.disabled {
@@ -876,6 +900,10 @@ body.dark-theme .auth-helper {
   color: #444444;
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+.calendar-heart.disabled .day-number {
+  color: #444444;
 }
 
 .calendar-cell.past {
@@ -1505,8 +1533,21 @@ body.dark-theme .calendar-cell {
   background: #020617;
 }
 
+/* Los corazones siempre tienen color rosa claro, incluso en modo oscuro */
+body.dark-theme .calendar-heart {
+  background: #ffb3d9; /* Rosa claro para todos los días */
+}
+
+body.dark-theme .calendar-heart .day-number {
+  color: #333;
+}
+
 body.dark-theme .calendar-cell:hover:not(.empty):not(.disabled):not(.past) {
   background: #0f172a;
+}
+
+body.dark-theme .calendar-heart:hover:not(.empty):not(.disabled):not(.past):not(.heart-pending):not(.heart-confirmed) {
+  background: #ff99cc; /* Rosa un poco más oscuro al hover */
 }
 
 body.dark-theme .calendar-cell.disabled {
@@ -1514,9 +1555,21 @@ body.dark-theme .calendar-cell.disabled {
   color: #d1d5db;
 }
 
+body.dark-theme .calendar-heart.disabled {
+  background: #c0c0c0;
+}
+
 body.dark-theme .calendar-cell.today {
   background: #1d4ed8; /* azul más oscuro para destacar en modo oscuro */
   color: #e5e7eb;
+}
+
+body.dark-theme .calendar-heart.today {
+  background: var(--coop-blue);
+}
+
+body.dark-theme .calendar-heart.today .day-number {
+  color: #ffffff;
 }
 
 body.dark-theme .side-panel-text,
