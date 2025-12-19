@@ -1702,13 +1702,6 @@ function setupPasswordToggle(passwordInputId, toggleButtonId) {
     const isPassword = passwordInput.type === "password";
     passwordInput.type = isPassword ? "text" : "password";
     toggleButton.classList.toggle("active", isPassword);
-    
-    // Cambiar el icono visualmente (el emoji ya está en el HTML)
-    const icon = toggleButton.querySelector(".password-toggle-icon");
-    if (icon) {
-      // El emoji ya cambia visualmente, pero podemos agregar un efecto
-      icon.textContent = isPassword ? "🙈" : "👁️";
-    }
   });
 }
 

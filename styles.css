@@ -329,13 +329,27 @@ body {
 }
 
 .password-toggle-icon {
-  font-size: 1.1rem;
+  width: 18px;
+  height: 18px;
   user-select: none;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+  display: block;
+}
+
+/* Icono de ojo tachado (ocultar) - se muestra cuando está activo */
+.password-toggle-icon.password-toggle-icon-hide {
+  position: absolute;
+  opacity: 0;
   pointer-events: none;
 }
 
-.password-toggle.active .password-toggle-icon::before {
-  content: "👁️‍🗨️";
+.password-toggle.active .password-toggle-icon:not(.password-toggle-icon-hide) {
+  opacity: 0;
+}
+
+.password-toggle.active .password-toggle-icon.password-toggle-icon-hide {
+  opacity: 1;
 }
 
 /* Estilos para modo oscuro */
