@@ -959,6 +959,127 @@ function openProfileModal() {
   form.appendChild(emailGroup);
   form.appendChild(phoneGroup);
 
+  // Separador para cambio de contraseña
+  const separator = document.createElement("hr");
+  separator.style.margin = "1.5rem 0";
+  separator.style.border = "none";
+  separator.style.borderTop = "1px solid rgba(148, 163, 184, 0.3)";
+  form.appendChild(separator);
+
+  // Sección de cambio de contraseña
+  const passwordSection = document.createElement("div");
+  passwordSection.style.marginTop = "1rem";
+
+  const passwordTitle = document.createElement("h3");
+  passwordTitle.textContent = "Cambiar contraseña";
+  passwordTitle.style.fontSize = "1rem";
+  passwordTitle.style.fontWeight = "600";
+  passwordTitle.style.marginBottom = "1rem";
+  passwordTitle.style.color = "#0f172a";
+  passwordSection.appendChild(passwordTitle);
+
+  const currentPasswordGroup = document.createElement("div");
+  currentPasswordGroup.className = "auth-field-group";
+  const currentPasswordLabel = document.createElement("label");
+  currentPasswordLabel.textContent = "Contraseña actual";
+  const currentPasswordWrapper = document.createElement("div");
+  currentPasswordWrapper.className = "password-input-wrapper";
+  const currentPasswordInput = document.createElement("input");
+  currentPasswordInput.type = "password";
+  currentPasswordInput.id = "profile-current-password";
+  currentPasswordInput.placeholder = "Ingresa tu contraseña actual";
+  const currentPasswordToggle = document.createElement("button");
+  currentPasswordToggle.type = "button";
+  currentPasswordToggle.className = "password-toggle";
+  currentPasswordToggle.innerHTML = `<svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+    <circle cx="12" cy="12" r="3"></circle>
+  </svg>
+  <svg class="password-toggle-icon password-toggle-icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+    <line x1="1" y1="1" x2="23" y2="23"></line>
+  </svg>`;
+  currentPasswordWrapper.appendChild(currentPasswordInput);
+  currentPasswordWrapper.appendChild(currentPasswordToggle);
+  currentPasswordGroup.appendChild(currentPasswordLabel);
+  currentPasswordGroup.appendChild(currentPasswordWrapper);
+  setupPasswordToggle("profile-current-password", currentPasswordToggle);
+
+  const newPasswordGroup = document.createElement("div");
+  newPasswordGroup.className = "auth-field-group";
+  const newPasswordLabel = document.createElement("label");
+  newPasswordLabel.textContent = "Nueva contraseña";
+  const newPasswordWrapper = document.createElement("div");
+  newPasswordWrapper.className = "password-input-wrapper";
+  const newPasswordInput = document.createElement("input");
+  newPasswordInput.type = "password";
+  newPasswordInput.id = "profile-new-password";
+  newPasswordInput.placeholder = "Mínimo 6 caracteres";
+  const newPasswordToggle = document.createElement("button");
+  newPasswordToggle.type = "button";
+  newPasswordToggle.className = "password-toggle";
+  newPasswordToggle.innerHTML = `<svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+    <circle cx="12" cy="12" r="3"></circle>
+  </svg>
+  <svg class="password-toggle-icon password-toggle-icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+    <line x1="1" y1="1" x2="23" y2="23"></line>
+  </svg>`;
+  newPasswordWrapper.appendChild(newPasswordInput);
+  newPasswordWrapper.appendChild(newPasswordToggle);
+  newPasswordGroup.appendChild(newPasswordLabel);
+  newPasswordGroup.appendChild(newPasswordWrapper);
+  setupPasswordToggle("profile-new-password", newPasswordToggle);
+
+  const confirmPasswordGroup = document.createElement("div");
+  confirmPasswordGroup.className = "auth-field-group";
+  const confirmPasswordLabel = document.createElement("label");
+  confirmPasswordLabel.textContent = "Confirmar nueva contraseña";
+  const confirmPasswordWrapper = document.createElement("div");
+  confirmPasswordWrapper.className = "password-input-wrapper";
+  const confirmPasswordInput = document.createElement("input");
+  confirmPasswordInput.type = "password";
+  confirmPasswordInput.id = "profile-confirm-password";
+  confirmPasswordInput.placeholder = "Repite la nueva contraseña";
+  const confirmPasswordToggle = document.createElement("button");
+  confirmPasswordToggle.type = "button";
+  confirmPasswordToggle.className = "password-toggle";
+  confirmPasswordToggle.innerHTML = `<svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+    <circle cx="12" cy="12" r="3"></circle>
+  </svg>
+  <svg class="password-toggle-icon password-toggle-icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+    <line x1="1" y1="1" x2="23" y2="23"></line>
+  </svg>`;
+  confirmPasswordWrapper.appendChild(confirmPasswordInput);
+  confirmPasswordWrapper.appendChild(confirmPasswordToggle);
+  confirmPasswordGroup.appendChild(confirmPasswordLabel);
+  confirmPasswordGroup.appendChild(confirmPasswordWrapper);
+  setupPasswordToggle("profile-confirm-password", confirmPasswordToggle);
+
+  const changePasswordBtn = document.createElement("button");
+  changePasswordBtn.type = "button";
+  changePasswordBtn.className = "btn";
+  changePasswordBtn.style.background = "#3b82f6";
+  changePasswordBtn.style.color = "#ffffff";
+  changePasswordBtn.style.marginTop = "0.5rem";
+  changePasswordBtn.textContent = "Cambiar contraseña";
+  changePasswordBtn.addEventListener("click", () => {
+    const currentPassword = currentPasswordInput.value.trim();
+    const newPassword = newPasswordInput.value.trim();
+    const confirmPassword = confirmPasswordInput.value.trim();
+    changeUserPassword(currentPassword, newPassword, confirmPassword);
+  });
+
+  passwordSection.appendChild(currentPasswordGroup);
+  passwordSection.appendChild(newPasswordGroup);
+  passwordSection.appendChild(confirmPasswordGroup);
+  passwordSection.appendChild(changePasswordBtn);
+
+  form.appendChild(passwordSection);
+
   const actions = document.createElement("div");
   actions.className = "modal-actions";
 
@@ -984,6 +1105,64 @@ function openProfileModal() {
   body.appendChild(actions);
 
   backdrop.classList.remove("hidden");
+}
+
+async function changeUserPassword(currentPassword, newPassword, confirmPassword) {
+  if (!currentUser) return;
+
+  if (!currentPassword || !newPassword || !confirmPassword) {
+    showToast("Todos los campos de contraseña son obligatorios.", "error");
+    return;
+  }
+
+  if (newPassword.length < 6) {
+    showToast("La nueva contraseña debe tener al menos 6 caracteres.", "error");
+    return;
+  }
+
+  if (newPassword !== confirmPassword) {
+    showToast("Las contraseñas nuevas no coinciden.", "error");
+    return;
+  }
+
+  if (currentPassword === newPassword) {
+    showToast("La nueva contraseña debe ser diferente a la actual.", "error");
+    return;
+  }
+
+  try {
+    showLoader();
+    const res = await fetch(`${API_BASE}/users/${currentUser.id}/password`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        currentPassword,
+        newPassword,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || "No se pudo cambiar la contraseña.", "error");
+      return;
+    }
+
+    showToast("Contraseña actualizada correctamente.", "success");
+    
+    // Limpiar los campos de contraseña
+    const currentPasswordInput = document.getElementById("profile-current-password");
+    const newPasswordInput = document.getElementById("profile-new-password");
+    const confirmPasswordInput = document.getElementById("profile-confirm-password");
+    
+    if (currentPasswordInput) currentPasswordInput.value = "";
+    if (newPasswordInput) newPasswordInput.value = "";
+    if (confirmPasswordInput) confirmPasswordInput.value = "";
+  } catch (err) {
+    console.error(err);
+    showToast("Ocurrió un error al cambiar la contraseña.", "error");
+  } finally {
+    hideLoader();
+  }
 }
 
 async function updateUserProfile(name, email, phone) {
@@ -1692,16 +1871,24 @@ function setupAuthUI() {
   setupPasswordToggle("register-password", "register-password-toggle");
 }
 
-function setupPasswordToggle(passwordInputId, toggleButtonId) {
+function setupPasswordToggle(passwordInputId, toggleButton) {
+  // Si toggleButton es un string (ID), obtener el elemento
+  if (typeof toggleButton === 'string') {
+    toggleButton = document.getElementById(toggleButton);
+  }
+  
   const passwordInput = document.getElementById(passwordInputId);
-  const toggleButton = document.getElementById(toggleButtonId);
 
   if (!passwordInput || !toggleButton) return;
 
-  toggleButton.addEventListener("click", () => {
+  // Remover listeners anteriores si existen
+  const newToggleButton = toggleButton.cloneNode(true);
+  toggleButton.parentNode.replaceChild(newToggleButton, toggleButton);
+
+  newToggleButton.addEventListener("click", () => {
     const isPassword = passwordInput.type === "password";
     passwordInput.type = isPassword ? "text" : "password";
-    toggleButton.classList.toggle("active", isPassword);
+    newToggleButton.classList.toggle("active", isPassword);
   });
 }
 

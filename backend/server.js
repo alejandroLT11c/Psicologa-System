@@ -136,6 +136,62 @@ app.put("/api/users/:userId", async (req, res) => {
   }
 });
 
+// Cambiar contraseña de un usuario
+app.put("/api/users/:userId/password", async (req, res) => {
+  const userId = parseInt(req.params.userId, 10);
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res
+      .status(400)
+      .json({ error: "La contraseña actual y la nueva contraseña son obligatorias." });
+  }
+
+  if (newPassword.length < 6) {
+    return res
+      .status(400)
+      .json({ error: "La nueva contraseña debe tener al menos 6 caracteres." });
+  }
+
+  try {
+    // Obtener el usuario y su contraseña actual
+    const users = await runQuery(
+      "SELECT id, password_hash FROM users WHERE id = ?",
+      [userId]
+    );
+    
+    if (users.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado." });
+    }
+
+    const user = users[0];
+    
+    if (!user.password_hash) {
+      return res.status(400).json({ error: "Este usuario no tiene contraseña configurada." });
+    }
+
+    // Verificar la contraseña actual
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isMatch) {
+      return res.status(400).json({ error: "La contraseña actual es incorrecta." });
+    }
+
+    // Hashear la nueva contraseña
+    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+
+    // Actualizar la contraseña
+    await runExecute(
+      "UPDATE users SET password_hash = ? WHERE id = ?",
+      [newPasswordHash, userId]
+    );
+
+    res.json({ ok: true, message: "Contraseña actualizada correctamente." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al cambiar la contraseña." });
+  }
+});
+
 // Login (pacientes y psicóloga)
 app.post("/api/auth/login", async (req, res) => {
   const { email, password } = req.body;
