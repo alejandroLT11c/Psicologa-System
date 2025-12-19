@@ -75,14 +75,11 @@ function formatTimeLabel(time) {
 // Lógica de citas y notificaciones
 function getTimeSlots() {
   const times = [];
-  // Mañana: 8:00 AM - 11:30 AM
-  for (let h = MORNING_START; h < MORNING_END; h++) {
+  // Mañana: 8:00, 9:00, 10:00, 11:00
+  for (let h = MORNING_START; h <= 11; h++) {
     times.push(`${String(h).padStart(2, "0")}:00`);
   }
-  // Agregar 11:00 y 11:30
-  times.push("11:00");
-  times.push("11:30");
-  // Tarde: 2:00 PM - 4:00 PM
+  // Tarde: 2:00, 3:00
   for (let h = AFTERNOON_START; h < AFTERNOON_END; h++) {
     times.push(`${String(h).padStart(2, "0")}:00`);
   }
