@@ -1,9 +1,19 @@
 const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcryptjs");
+const fs = require("fs");
 
-// Ruta a la base de datos (archivo en la carpeta backend)
-const dbPath = path.join(__dirname, "database.sqlite");
+// Ruta a la base de datos: usar variable de entorno o carpeta local
+// En Render, configura un disco persistente y usa DATABASE_PATH en variables de entorno
+const dbDir = process.env.DATABASE_PATH || __dirname;
+
+// Asegurar que el directorio existe
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
+const dbPath = path.join(dbDir, "database.sqlite");
+console.log(`Base de datos en: ${dbPath}`);
 
 const db = new sqlite3.Database(dbPath);
 
