@@ -57,7 +57,12 @@
           </div>
           <div class="auth-field-group">
             <label for="login-password">Contraseña</label>
-            <input id="login-password" type="password" autocomplete="current-password" required />
+            <div class="password-input-wrapper">
+              <input id="login-password" type="password" autocomplete="current-password" required />
+              <button type="button" class="password-toggle" id="login-password-toggle" aria-label="Mostrar contraseña">
+                <span class="password-toggle-icon">👁️</span>
+              </button>
+            </div>
           </div>
           <div class="auth-field-group auth-remember">
             <label class="remember-label">
@@ -83,7 +88,12 @@
           </div>
           <div class="auth-field-group">
             <label for="register-password">Contraseña</label>
-            <input id="register-password" type="password" autocomplete="new-password" required />
+            <div class="password-input-wrapper">
+              <input id="register-password" type="password" autocomplete="new-password" required />
+              <button type="button" class="password-toggle" id="register-password-toggle" aria-label="Mostrar contraseña">
+                <span class="password-toggle-icon">👁️</span>
+              </button>
+            </div>
           </div>
           <button type="submit" class="btn btn-primary auth-submit">Crear cuenta</button>
           <p class="auth-helper">

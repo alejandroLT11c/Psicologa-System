@@ -7,7 +7,7 @@ const WORK_END_HOUR = 17; // exclusivo, última cita 16:00-17:00
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const API_BASE = isLocalhost 
   ? "http://localhost:4000/api"
-  : "https://psicologa-backend.onrender.com/api"; // ⚠️ ACTUALIZAR ESTA URL cuando tengas el backend desplegado
+  : "https://psicologa-backend.onrender.com/api";
 
 let currentRole = "paciente";
 let currentDate = new Date();
@@ -1686,6 +1686,30 @@ function setupAuthUI() {
       logout();
     });
   }
+
+  // Configurar botones de mostrar/ocultar contraseña
+  setupPasswordToggle("login-password", "login-password-toggle");
+  setupPasswordToggle("register-password", "register-password-toggle");
+}
+
+function setupPasswordToggle(passwordInputId, toggleButtonId) {
+  const passwordInput = document.getElementById(passwordInputId);
+  const toggleButton = document.getElementById(toggleButtonId);
+
+  if (!passwordInput || !toggleButton) return;
+
+  toggleButton.addEventListener("click", () => {
+    const isPassword = passwordInput.type === "password";
+    passwordInput.type = isPassword ? "text" : "password";
+    toggleButton.classList.toggle("active", isPassword);
+    
+    // Cambiar el icono visualmente (el emoji ya está en el HTML)
+    const icon = toggleButton.querySelector(".password-toggle-icon");
+    if (icon) {
+      // El emoji ya cambia visualmente, pero podemos agregar un efecto
+      icon.textContent = isPassword ? "🙈" : "👁️";
+    }
+  });
 }
 
 function logout() {

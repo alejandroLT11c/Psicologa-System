@@ -292,6 +292,61 @@ body {
   background: #ffffff;
 }
 
+/* Contenedor para campo de contraseña con botón de mostrar/ocultar */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input {
+  padding-right: 2.5rem; /* Espacio para el botón */
+  width: 100%;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 0.6rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: color 0.15s ease, transform 0.15s ease;
+  z-index: 1;
+}
+
+.password-toggle:hover {
+  color: #22c55e;
+  transform: scale(1.1);
+}
+
+.password-toggle:active {
+  transform: scale(0.95);
+}
+
+.password-toggle-icon {
+  font-size: 1.1rem;
+  user-select: none;
+  pointer-events: none;
+}
+
+.password-toggle.active .password-toggle-icon::before {
+  content: "👁️‍🗨️";
+}
+
+/* Estilos para modo oscuro */
+body.dark-theme .password-toggle {
+  color: #9ca3af;
+}
+
+body.dark-theme .password-toggle:hover {
+  color: #22c55e;
+}
+
 .auth-submit {
   margin-top: 0.35rem;
   width: 100%;
