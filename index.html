@@ -17,12 +17,7 @@
       </div>
       <div class="top-actions">
         <span id="user-display" class="user-display hidden"></span>
-        <div class="role-switch">
-          <button id="profile-btn" class="role-btn hidden" type="button">Perfil</button>
-        </div>
-        <button id="logout-btn" class="logout-btn hidden" type="button">
-          Cerrar sesión
-        </button>
+        <!-- Botones de perfil y cerrar sesión removidos -->
         <button id="refresh-btn" class="refresh-btn" type="button" aria-label="Recargar página">
           ↻
         </button>
@@ -45,10 +40,7 @@
           Inicia sesión o crea tu cuenta para agendar una cita con la psicóloga.
         </p>
 
-        <div class="auth-tabs">
-          <button id="auth-tab-login" class="auth-tab active" type="button">Iniciar sesión</button>
-          <button id="auth-tab-register" class="auth-tab" type="button">Registrarme</button>
-        </div>
+        <!-- Tabs removidos - solo login -->
 
         <form id="login-form" class="auth-form">
           <div class="auth-field-group">
@@ -77,10 +69,14 @@
               Mantener sesión iniciada en este equipo
             </label>
           </div>
+          <div class="auth-field-group auth-privacy">
+            <label class="privacy-label">
+              <input id="login-privacy" type="checkbox" required />
+              <span>Acepto que mis datos están seguros y protegidos. Entiendo que esta información se usa únicamente para gestionar mis citas con la psicóloga.</span>
+            </label>
+          </div>
           <button type="submit" class="btn btn-primary auth-submit">Iniciar sesión</button>
         </form>
-
-        <form id="register-form" class="auth-form hidden">
           <div class="auth-field-group">
             <label for="register-name">Nombre completo</label>
             <input id="register-name" type="text" autocomplete="name" required />
@@ -180,8 +176,8 @@
           <div class="calendar-legend">
             <span><span class="legend-box today"></span> Día actual</span>
             <span><span class="legend-box disabled"></span> Día deshabilitado</span>
-            <span><span class="legend-box pending"></span> Citas pendientes</span>
-            <span><span class="legend-box confirmed"></span> Citas confirmadas</span>
+            <span><span class="legend-box" style="background: #ffd633;"></span> Cita pendiente</span>
+            <span><span class="legend-box" style="background: #22c55e;"></span> Cita confirmada</span>
           </div>
           <div class="calendar-grid" id="calendar-grid">
             <!-- Calendario generado por JavaScript -->
@@ -195,7 +191,7 @@
               <h2>Agendar cita</h2>
               <p class="side-panel-text">
                 Selecciona un día en el calendario para ver los horarios disponibles
-                entre <strong>8:00 a.m.</strong> y <strong>5:00 p.m.</strong>
+                entre <strong>8:00 a.m. - 11:30 a.m.</strong> y <strong>2:00 p.m. - 4:00 p.m.</strong>
               </p>
               <div class="selected-day" id="selected-day-text">Ningún día seleccionado</div>
               <div class="time-slots" id="time-slots">
@@ -223,7 +219,12 @@
           <div id="panel-admin" class="panel-grid hidden">
             <!-- Columna 1: Gestión del día + horas -->
             <div class="panel-col">
-              <h2>Gestión del día seleccionado</h2>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="margin: 0;">Gestión del día seleccionado</h2>
+                <button id="manage-users-btn" class="btn" style="background: #3b82f6; color: white; padding: 0.5rem 1rem; font-size: 0.85rem;">
+                  Gestionar usuarios
+                </button>
+              </div>
               <p class="side-panel-text">
                 Selecciona un día en el calendario para ver y gestionar las citas.
               </p>

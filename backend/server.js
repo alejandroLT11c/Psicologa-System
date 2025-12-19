@@ -41,8 +41,8 @@ async function createNotification(userId, type, message) {
 
 // ---- Autenticación ----
 
-// Registro de usuario (rol paciente)
-app.post("/api/auth/register", async (req, res) => {
+// Crear usuario (solo para admin/psicóloga)
+app.post("/api/users", async (req, res) => {
   const { name, email, phone, password } = req.body;
 
   if (!name || !email || !password || !phone) {
@@ -84,9 +84,61 @@ app.post("/api/auth/register", async (req, res) => {
     res.status(201).json(user);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Error al registrar el usuario." });
+    res.status(500).json({ error: "Error al crear el usuario." });
   }
 });
+
+// Obtener todos los usuarios (solo para admin/psicóloga)
+app.get("/api/users", async (req, res) => {
+  try {
+    const rows = await runQuery(
+      "SELECT id, name, email, phone, role FROM users WHERE role = 'user' ORDER BY name ASC"
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener usuarios." });
+  }
+});
+
+// Eliminar usuario (solo para admin/psicóloga)
+app.delete("/api/users/:userId", async (req, res) => {
+  const userId = parseInt(req.params.userId, 10);
+  
+  if (!userId) {
+    return res.status(400).json({ error: "ID de usuario inválido." });
+  }
+
+  try {
+    // Verificar que el usuario existe
+    const users = await runQuery("SELECT id, role FROM users WHERE id = ?", [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado." });
+    }
+
+    const user = users[0];
+    // No permitir eliminar al admin
+    if (user.role === "admin") {
+      return res.status(403).json({ error: "No se puede eliminar al administrador." });
+    }
+
+    // Eliminar citas del usuario
+    await runExecute("DELETE FROM appointments WHERE user_id = ?", [userId]);
+    // Eliminar notificaciones del usuario
+    await runExecute("DELETE FROM notifications WHERE user_id = ?", [userId]);
+    // Eliminar el usuario
+    await runExecute("DELETE FROM users WHERE id = ?", [userId]);
+
+    res.json({ ok: true, message: "Usuario eliminado correctamente." });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al eliminar el usuario." });
+  }
+});
+
+// Registro de usuario (rol paciente) - REMOVIDO, solo admin puede crear usuarios
+// El endpoint /api/auth/register ha sido removido. Los usuarios ahora se crean
+// a través de /api/users (solo accesible para admin/psicóloga)
 
 // Actualizar datos básicos de un usuario
 app.put("/api/users/:userId", async (req, res) => {

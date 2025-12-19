@@ -1,6 +1,9 @@
 // Datos de ejemplo y estado global
-const WORK_START_HOUR = 8;
-const WORK_END_HOUR = 17; // exclusivo, última cita 16:00-17:00
+// Horarios: 8:00 AM - 11:30 AM y 2:00 PM - 4:00 PM
+const MORNING_START = 8;
+const MORNING_END = 12; // 11:30 AM (última cita 11:00-11:30)
+const AFTERNOON_START = 14; // 2:00 PM
+const AFTERNOON_END = 16; // 4:00 PM (última cita 3:00-4:00)
 
 // Detectar entorno: si estamos en localhost, usar localhost, sino usar la URL de producción
 // Esta URL se actualizará cuando tengas la URL final de tu backend en Render
@@ -72,7 +75,15 @@ function formatTimeLabel(time) {
 // Lógica de citas y notificaciones
 function getTimeSlots() {
   const times = [];
-  for (let h = WORK_START_HOUR; h < WORK_END_HOUR; h++) {
+  // Mañana: 8:00 AM - 11:30 AM
+  for (let h = MORNING_START; h < MORNING_END; h++) {
+    times.push(`${String(h).padStart(2, "0")}:00`);
+  }
+  // Agregar 11:00 y 11:30
+  times.push("11:00");
+  times.push("11:30");
+  // Tarde: 2:00 PM - 4:00 PM
+  for (let h = AFTERNOON_START; h < AFTERNOON_END; h++) {
     times.push(`${String(h).padStart(2, "0")}:00`);
   }
   return times;
@@ -413,8 +424,13 @@ function renderCalendar() {
   for (let day = 1; day <= daysInMonth; day++) {
     const cellDate = new Date(year, month, day);
     const iso = toISODate(cellDate);
+    const dayOfWeek = cellDate.getDay(); // 0 = Domingo, 6 = Sábado
+    
+    // Deshabilitar sábados (6) y domingos (0)
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    
     const cell = document.createElement("div");
-    cell.className = "calendar-cell";
+    cell.className = "calendar-cell calendar-heart";
 
     if (isSameDay(cellDate, today)) {
       cell.classList.add("today");
@@ -422,7 +438,7 @@ function renderCalendar() {
     if (isPastDay(cellDate)) {
       cell.classList.add("past");
     }
-    if (disabledDays.has(iso)) {
+    if (disabledDays.has(iso) || isWeekend) {
       cell.classList.add("disabled");
     }
 
@@ -431,44 +447,30 @@ function renderCalendar() {
     dayNumber.textContent = day.toString();
     cell.appendChild(dayNumber);
 
+    // Determinar el estado de las citas para cambiar el color del corazón
     const allApps = getAppointmentsForDay(iso);
     const apps =
       currentRole === "admin" || !currentUser
         ? allApps
         : allApps.filter((a) => a.userId === currentUser.id);
+    
+    // Si hay citas, determinar el color según el estado
     if (apps.length > 0) {
-      const dotsContainer = document.createElement("div");
-      dotsContainer.className = "status-dots";
-
-      const pendingCount = apps.filter((a) => a.status === "pending").length;
-      const confirmedCount = apps.filter((a) => a.status === "confirmed").length;
-
-      if (pendingCount > 0) {
-        const pendingWrapper = document.createElement("div");
-        pendingWrapper.className = "status-dot-wrapper";
-
-        const dotPending = document.createElement("div");
-        dotPending.className = "status-dot pending";
-        pendingWrapper.appendChild(dotPending);
-
-        // Para la psicóloga, mostrar número de citas pendientes en el día
-        if (currentRole === "admin") {
-          const badge = document.createElement("span");
-          badge.className = "status-count";
-          badge.textContent = pendingCount.toString();
-          pendingWrapper.appendChild(badge);
-        }
-
-        dotsContainer.appendChild(pendingWrapper);
+      const hasPending = apps.some((a) => a.status === "pending");
+      const hasConfirmed = apps.some((a) => a.status === "confirmed");
+      const hasCancelled = apps.some((a) => a.status === "cancelled" || a.status === "rejected");
+      
+      if (hasConfirmed) {
+        cell.classList.add("heart-confirmed"); // Verde
+      } else if (hasPending) {
+        cell.classList.add("heart-pending"); // Amarillo
+      } else if (hasCancelled) {
+        // Canceladas vuelven a blanco (sin clase adicional)
+        cell.classList.remove("heart-pending", "heart-confirmed");
       }
-
-      if (confirmedCount > 0) {
-        const dotConfirmed = document.createElement("div");
-        dotConfirmed.className = "status-dot confirmed";
-        dotsContainer.appendChild(dotConfirmed);
-      }
-
-      cell.appendChild(dotsContainer);
+    } else {
+      // Sin citas = blanco (sin clases de color)
+      cell.classList.remove("heart-pending", "heart-confirmed");
     }
 
     cell.addEventListener("click", () => handleDayClick(cellDate));
@@ -1441,7 +1443,7 @@ function openDayBookingModal(date) {
 
   const helper = document.createElement("p");
   helper.className = "modal-helper-text";
-  helper.textContent = "Elige una hora disponible entre 8:00 a.m. y 5:00 p.m.";
+  helper.textContent = "Elige una hora disponible entre 8:00 a.m. - 11:30 a.m. y 2:00 p.m. - 4:00 p.m.";
 
   const timesContainer = document.createElement("div");
   timesContainer.className = "time-slots";
@@ -1640,6 +1642,15 @@ async function init() {
     }
   });
 
+  const manageUsersBtn = document.getElementById("manage-users-btn");
+  if (manageUsersBtn) {
+    manageUsersBtn.addEventListener("click", () => {
+      if (currentUser?.role === "admin") {
+        openManageUsersModal();
+      }
+    });
+  }
+
   // Tema (claro / oscuro)
   const themeButtons = document.querySelectorAll(".theme-toggle");
   const savedTheme = localStorage.getItem("psico_theme") || "light";
@@ -1748,34 +1759,22 @@ async function onUserAuthenticated(user, storage = "local") {
 }
 
 function setupAuthUI() {
-  const tabLogin = document.getElementById("auth-tab-login");
-  const tabRegister = document.getElementById("auth-tab-register");
   const loginForm = document.getElementById("login-form");
-  const registerForm = document.getElementById("register-form");
   const logoutBtn = document.getElementById("logout-btn");
 
-  if (!tabLogin || !tabRegister || !loginForm || !registerForm) return;
-
-  tabLogin.addEventListener("click", () => {
-    tabLogin.classList.add("active");
-    tabRegister.classList.remove("active");
-    loginForm.classList.remove("hidden");
-    registerForm.classList.add("hidden");
-  });
-
-  tabRegister.addEventListener("click", () => {
-    tabRegister.classList.add("active");
-    tabLogin.classList.remove("active");
-    registerForm.classList.remove("hidden");
-    loginForm.classList.add("hidden");
-  });
+  if (!loginForm) return;
 
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("login-email").value;
     const password = document.getElementById("login-password").value;
-    const rememberCheckbox = document.getElementById("login-remember");
-    const remember = !rememberCheckbox || rememberCheckbox.checked;
+    const privacyCheckbox = document.getElementById("login-privacy");
+
+    // Validar checkbox de privacidad
+    if (!privacyCheckbox || !privacyCheckbox.checked) {
+      showToast("Debes aceptar que tus datos están seguros para continuar.", "error");
+      return;
+    }
 
     try {
       showLoader();
@@ -1789,7 +1788,8 @@ function setupAuthUI() {
         showToast(data.error || "No se pudo iniciar sesión.", "error");
         return;
       }
-      await onUserAuthenticated(data, remember ? "local" : "session");
+      // Siempre guardar sesión automáticamente (localStorage)
+      await onUserAuthenticated(data, "local");
     } catch (err) {
       console.error(err);
       showToast("Ocurrió un error al iniciar sesión.", "error");
@@ -1798,67 +1798,7 @@ function setupAuthUI() {
     }
   });
 
-  registerForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const nameInput = document.getElementById("register-name");
-    const emailInput = document.getElementById("register-email");
-    const phoneInput = document.getElementById("register-phone");
-    const passwordInput = document.getElementById("register-password");
-
-    if (!nameInput || !emailInput || !phoneInput || !passwordInput) {
-      showToast("Error interno del formulario. Por favor recarga la página.", "error");
-      return;
-    }
-
-    const name = nameInput.value;
-    const email = emailInput.value;
-    const phone = phoneInput.value;
-    const password = passwordInput.value;
-
-    try {
-      showLoader();
-      const res = await fetch(`${API_BASE}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, phone, password }),
-      });
-
-      const contentType = res.headers.get("content-type") || "";
-
-      if (!res.ok) {
-        let message = `Error ${res.status}`;
-        if (contentType.includes("application/json")) {
-          const data = await res.json();
-          if (data && data.error) {
-            message = data.error;
-          }
-        } else {
-          const text = await res.text();
-          if (text) {
-            message = text.slice(0, 200);
-          }
-        }
-        showToast(`No se pudo crear la cuenta. ${message}`, "error");
-        return;
-      }
-
-      // Si la respuesta es correcta, asumimos JSON
-      const data = contentType.includes("application/json") ? await res.json() : null;
-      if (!data) {
-        showToast("La respuesta del servidor no es la esperada.", "error");
-        return;
-      }
-      await onUserAuthenticated(data, "local");
-    } catch (err) {
-      console.error("Error en registro:", err);
-      showToast(
-        `Ocurrió un error al registrarse: ${err && err.message ? err.message : ""}`,
-        "error"
-      );
-    } finally {
-      hideLoader();
-    }
-  });
+  // Código de registro removido - los usuarios ahora se crean desde el panel de admin
 
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
@@ -1868,7 +1808,6 @@ function setupAuthUI() {
 
   // Configurar botones de mostrar/ocultar contraseña
   setupPasswordToggle("login-password", "login-password-toggle");
-  setupPasswordToggle("register-password", "register-password-toggle");
 }
 
 function setupPasswordToggle(passwordInputId, toggleButton) {
@@ -2026,6 +1965,251 @@ async function cancelAppointmentByUser(appointmentId, note) {
   } catch (err) {
     console.error(err);
     alert("Ocurrió un error al cancelar la cita.");
+  } finally {
+    hideLoader();
+  }
+}
+
+// Gestión de usuarios (solo para admin/psicóloga)
+let usersList = [];
+
+async function loadUsers() {
+  if (currentUser?.role !== "admin") return;
+  
+  try {
+    const res = await fetch(`${API_BASE}/users`);
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || "Error al cargar usuarios.", "error");
+      return;
+    }
+    usersList = data;
+  } catch (err) {
+    console.error(err);
+    showToast("Error al cargar usuarios.", "error");
+  }
+}
+
+function openManageUsersModal() {
+  if (currentUser?.role !== "admin") return;
+  
+  const backdrop = document.getElementById("modal-backdrop");
+  const title = document.getElementById("modal-title");
+  const body = document.getElementById("modal-body");
+
+  title.textContent = "Gestionar usuarios";
+  body.innerHTML = "";
+
+  // Botón para agregar usuario
+  const addUserBtn = document.createElement("button");
+  addUserBtn.className = "btn";
+  addUserBtn.style.background = "var(--coop-green)";
+  addUserBtn.style.color = "white";
+  addUserBtn.style.marginBottom = "1rem";
+  addUserBtn.textContent = "+ Agregar nuevo usuario";
+  addUserBtn.addEventListener("click", openAddUserModal);
+  body.appendChild(addUserBtn);
+
+  // Lista de usuarios
+  const usersContainer = document.createElement("div");
+  usersContainer.id = "users-list-container";
+  usersContainer.style.maxHeight = "400px";
+  usersContainer.style.overflowY = "auto";
+  body.appendChild(usersContainer);
+
+  renderUsersList();
+
+  const actions = document.createElement("div");
+  actions.className = "modal-actions";
+  const closeBtn = document.createElement("button");
+  closeBtn.className = "btn btn-reject";
+  closeBtn.textContent = "Cerrar";
+  closeBtn.addEventListener("click", closeModal);
+  actions.appendChild(closeBtn);
+  body.appendChild(actions);
+
+  backdrop.classList.remove("hidden");
+  
+  // Cargar usuarios si no están cargados
+  if (usersList.length === 0) {
+    loadUsers().then(() => renderUsersList());
+  }
+}
+
+function renderUsersList() {
+  const container = document.getElementById("users-list-container");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (usersList.length === 0) {
+    container.innerHTML = "<p style='text-align: center; color: #6b7280; padding: 2rem;'>No hay usuarios registrados.</p>";
+    return;
+  }
+
+  usersList.forEach((user) => {
+    const userItem = document.createElement("div");
+    userItem.style.padding = "1rem";
+    userItem.style.border = "1px solid #e5e7eb";
+    userItem.style.borderRadius = "8px";
+    userItem.style.marginBottom = "0.5rem";
+    userItem.style.display = "flex";
+    userItem.style.justifyContent = "space-between";
+    userItem.style.alignItems = "center";
+
+    const userInfo = document.createElement("div");
+    userInfo.innerHTML = `
+      <div style="font-weight: 600; margin-bottom: 0.25rem;">${user.name}</div>
+      <div style="font-size: 0.85rem; color: #6b7280;">${user.email}</div>
+      <div style="font-size: 0.85rem; color: #6b7280;">${user.phone}</div>
+    `;
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "btn";
+    deleteBtn.style.background = "#ef4444";
+    deleteBtn.style.color = "white";
+    deleteBtn.style.padding = "0.4rem 0.8rem";
+    deleteBtn.style.fontSize = "0.85rem";
+    deleteBtn.textContent = "Eliminar";
+    deleteBtn.addEventListener("click", () => deleteUser(user.id, user.name));
+
+    userItem.appendChild(userInfo);
+    userItem.appendChild(deleteBtn);
+    container.appendChild(userItem);
+  });
+}
+
+function openAddUserModal() {
+  const backdrop = document.getElementById("modal-backdrop");
+  const title = document.getElementById("modal-title");
+  const body = document.getElementById("modal-body");
+
+  title.textContent = "Agregar nuevo usuario";
+  body.innerHTML = "";
+
+  const form = document.createElement("div");
+  form.className = "auth-form";
+
+  const nameGroup = document.createElement("div");
+  nameGroup.className = "auth-field-group";
+  nameGroup.innerHTML = `
+    <label>Nombre completo</label>
+    <input type="text" id="new-user-name" required />
+  `;
+
+  const emailGroup = document.createElement("div");
+  emailGroup.className = "auth-field-group";
+  emailGroup.innerHTML = `
+    <label>Correo electrónico</label>
+    <input type="email" id="new-user-email" required />
+  `;
+
+  const phoneGroup = document.createElement("div");
+  phoneGroup.className = "auth-field-group";
+  phoneGroup.innerHTML = `
+    <label>Teléfono</label>
+    <input type="tel" id="new-user-phone" required />
+  `;
+
+  const passwordGroup = document.createElement("div");
+  passwordGroup.className = "auth-field-group";
+  passwordGroup.innerHTML = `
+    <label>Contraseña</label>
+    <input type="password" id="new-user-password" required minlength="6" />
+    <small style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; display: block;">Mínimo 6 caracteres</small>
+  `;
+
+  form.appendChild(nameGroup);
+  form.appendChild(emailGroup);
+  form.appendChild(phoneGroup);
+  form.appendChild(passwordGroup);
+
+  const actions = document.createElement("div");
+  actions.className = "modal-actions";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "btn btn-reject";
+  cancelBtn.textContent = "Cancelar";
+  cancelBtn.addEventListener("click", () => openManageUsersModal());
+
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "btn btn-confirm";
+  saveBtn.textContent = "Crear usuario";
+  saveBtn.addEventListener("click", async () => {
+    const name = document.getElementById("new-user-name").value.trim();
+    const email = document.getElementById("new-user-email").value.trim();
+    const phone = document.getElementById("new-user-phone").value.trim();
+    const password = document.getElementById("new-user-password").value;
+
+    if (!name || !email || !phone || !password) {
+      showToast("Todos los campos son obligatorios.", "error");
+      return;
+    }
+
+    if (password.length < 6) {
+      showToast("La contraseña debe tener al menos 6 caracteres.", "error");
+      return;
+    }
+
+    await createUser(name, email, phone, password);
+  });
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(saveBtn);
+
+  body.appendChild(form);
+  body.appendChild(actions);
+}
+
+async function createUser(name, email, phone, password) {
+  try {
+    showLoader();
+    const res = await fetch(`${API_BASE}/users`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, email, phone, password }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || "Error al crear el usuario.", "error");
+      return;
+    }
+
+    showToast("Usuario creado correctamente.", "success");
+    await loadUsers();
+    openManageUsersModal(); // Volver al modal de gestión
+  } catch (err) {
+    console.error(err);
+    showToast("Error al crear el usuario.", "error");
+  } finally {
+    hideLoader();
+  }
+}
+
+async function deleteUser(userId, userName) {
+  if (!confirm(`¿Estás segura de que deseas eliminar al usuario "${userName}"?\n\nEsta acción eliminará todas sus citas y no se puede deshacer.`)) {
+    return;
+  }
+
+  try {
+    showLoader();
+    const res = await fetch(`${API_BASE}/users/${userId}`, {
+      method: "DELETE",
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || "Error al eliminar el usuario.", "error");
+      return;
+    }
+
+    showToast("Usuario eliminado correctamente.", "success");
+    await loadUsers();
+    renderUsersList();
+  } catch (err) {
+    console.error(err);
+    showToast("Error al eliminar el usuario.", "error");
   } finally {
     hideLoader();
   }
