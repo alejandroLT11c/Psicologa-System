@@ -7,7 +7,7 @@ const WORK_END_HOUR = 17; // exclusivo, última cita 16:00-17:00
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const API_BASE = isLocalhost 
   ? "http://localhost:4000/api"
-  : "https://TU-BACKEND-URL.onrender.com/api"; // ⚠️ ACTUALIZAR ESTA URL cuando tengas el backend desplegado
+  : "https://psicologa-backend.onrender.com/api"; // ⚠️ ACTUALIZAR ESTA URL cuando tengas el backend desplegado
 
 let currentRole = "paciente";
 let currentDate = new Date();
