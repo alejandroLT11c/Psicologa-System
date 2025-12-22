@@ -794,81 +794,76 @@ body.dark-theme .auth-helper {
   flex-direction: column;
 }
 
-/* 1. La celda es solo el contenedor (la caja invisible) */
+/* 1. La celda ahora es solo el contenedor flexible para centrar todo */
 .calendar-cell.calendar-heart {
-  position: relative; /* Necesario para centrar el corazón */
+  position: relative;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 70px;
-  padding: 0;
+  justify-content: center; /* Centra horizontalmente */
+  align-items: center; /* Centra verticalmente */
+  min-height: 60px; /* Altura de la celda */
+  background: transparent !important; /* Quitamos el fondo gris del cuadro */
   border-radius: 0;
-  background: transparent; /* Sin fondo en la celda */
-  cursor: pointer;
+  padding: 0;
+  overflow: visible; /* Importante para que el corazón grande no se corte */
   z-index: 1;
+  cursor: pointer;
 }
 
-/* 2. El número del día (para que quede encima del corazón) */
+/* 2. El Número: Ahora centrado y encima del corazón */
 .calendar-heart .day-number {
-  position: absolute;
-  top: 0.4rem;
-  right: 0.4rem;
-  z-index: 2; /* El número va ENCIMA del corazón */
+  position: relative; /* Ya no es absolute - el flexbox lo centra */
+  z-index: 5; /* Capa superior */
   font-weight: 700;
-  font-size: 1rem;
-  color: #333; /* Color del texto por defecto */
-  pointer-events: none;
-  text-shadow: 0 0 4px rgba(255, 255, 255, 1), 0 1px 3px rgba(255, 255, 255, 0.9);
+  font-size: 1rem; /* Tamaño del número */
+  color: #444; /* Color gris oscuro para mejor contraste con rosa claro */
+  margin-top: -3px; /* Ajuste visual fino para que quede perfecto en el centro */
+  pointer-events: none; /* Que el click traspase al corazón */
   line-height: 1;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 1), 0 1px 3px rgba(255, 255, 255, 0.9);
 }
 
-/* 3. El Corazón: Usamos ::before para dibujarlo detrás del número */
+/* 3. El Corazón (Fondo): Más grande y sin la "puntica" de globo */
 .calendar-heart::before {
   content: "";
   position: absolute;
   top: 50%;
   left: 50%;
-  /* TAMAÑO FIJO: Esto evita que se deforme en celulares */
-  width: 50px;
-  height: 50px;
-  background-color: #ffb3d9; /* Color rosa por defecto (corazón vacío) */
-  /* Truco moderno de máscara: Usamos SVG para crear un corazón perfecto */
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50,85 L45,80 C20,55 5,40 5,25 C5,15 12,8 22,8 C30,8 36,12 40,18 C44,12 50,8 58,8 C68,8 75,15 75,25 C75,40 60,55 35,80 Z' fill='black'/%3E%3C/svg%3E");
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50,85 L45,80 C20,55 5,40 5,25 C5,15 12,8 22,8 C30,8 36,12 40,18 C44,12 50,8 58,8 C68,8 75,15 75,25 C75,40 60,55 35,80 Z' fill='black'/%3E%3C/svg%3E");
+  /* TAMAÑO GRANDE: Aquí controlas qué tan grande se ve */
+  width: 48px;
+  height: 48px;
+  background-color: #ffc0cb; /* Rosa claro por defecto */
+  /* NUEVO SVG: Un corazón más "gordito" y clásico (Material Design) */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' fill='black'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' fill='black'/%3E%3C/svg%3E");
   mask-repeat: no-repeat;
   -webkit-mask-repeat: no-repeat;
   mask-position: center;
   -webkit-mask-position: center;
   mask-size: contain;
   -webkit-mask-size: contain;
-  /* Centrar el corazón */
+  /* Centrado perfecto */
   transform: translate(-50%, -50%);
   -webkit-transform: translate(-50%, -50%);
   z-index: 1; /* El corazón va DETRÁS del número */
-  opacity: 1;
   transition: all 0.3s ease;
 }
 
-/* 4. Colores según el estado (definidos en tu app.js) */
+/* Cita PENDIENTE (Amarillo) */
 .calendar-heart.heart-pending::before {
-  background-color: #ffd633; /* Amarillo pendiente */
-  opacity: 1;
+  background-color: #ffd633;
 }
-
 .calendar-heart.heart-pending .day-number {
-  color: #333;
+  color: #444; /* Texto oscuro sobre fondo amarillo */
 }
 
+/* 5. Colores y Estados (Cita confirmada, pendiente, día actual) */
+/* Cita CONFIRMADA (Verde) */
 .calendar-heart.heart-confirmed::before {
-  background-color: #22c55e; /* Verde éxito */
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.1); /* Un poquito más grande */
-  -webkit-transform: translate(-50%, -50%) scale(1.1);
+  background-color: #22c55e;
 }
-
 .calendar-heart.heart-confirmed .day-number {
-  color: #ffffff;
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+  color: white; /* Texto blanco sobre fondo verde */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .calendar-cell.empty {
@@ -876,14 +871,14 @@ body.dark-theme .auth-helper {
   cursor: default;
 }
 
-.calendar-heart:hover:not(.empty):not(.disabled):not(.past) {
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+/* 4. Efectos al pasar el mouse (hover) */
+.calendar-heart:hover::before {
+  transform: translate(-50%, -50%) scale(1.15); /* Crece un poco */
+  -webkit-transform: translate(-50%, -50%) scale(1.15);
 }
 
 .calendar-heart:hover:not(.empty):not(.disabled):not(.past):not(.heart-pending):not(.heart-confirmed)::before {
   background-color: #ff99cc; /* Rosa un poco más oscuro al hover */
-  transform: translate(-50%, -50%) scale(1.1);
-  -webkit-transform: translate(-50%, -50%) scale(1.1);
 }
 
 .calendar-cell .day-number {
@@ -901,35 +896,15 @@ body.dark-theme .auth-helper {
   text-shadow: 0 0 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.calendar-heart.today.heart-pending::before {
-  background-color: #ffd633;
-}
-
-.calendar-heart.today.heart-pending .day-number {
-  color: #333;
-  text-shadow: 0 0 4px rgba(255, 255, 255, 1), 0 1px 3px rgba(255, 255, 255, 0.9);
-}
-
-.calendar-heart.today.heart-confirmed::before {
-  background-color: #22c55e;
-}
-
-.calendar-heart.today.heart-confirmed .day-number {
-  color: #ffffff;
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.calendar-heart.disabled::before {
-  background-color: #c0c0c0;
-  opacity: 0.6;
-}
-
+/* Día DESHABILITADO (Gris) */
 .calendar-heart.disabled {
   cursor: not-allowed;
 }
-
+.calendar-heart.disabled::before {
+  background-color: #e5e7eb; /* Corazón gris muy suave */
+}
 .calendar-heart.disabled .day-number {
-  color: #444444;
+  color: #bbb;
   text-decoration: line-through;
 }
 
@@ -1807,17 +1782,19 @@ body.dark-theme #welcome-admin {
     height: 40px !important;
   }
 
+  /* --- AJUSTE PARA MÓVIL (MUY IMPORTANTE) --- */
+  .calendar-cell.calendar-heart {
+    min-height: 50px; /* Celdas un poco más compactas */
+  }
+
+  /* Ajustamos el tamaño del corazón en celular para que no se choquen */
+  .calendar-heart::before {
+    width: 40px;
+    height: 40px;
+  }
+
   .calendar-heart .day-number {
-    font-size: 0.8rem !important;
-    top: 0.3rem !important;
-    right: 0.3rem !important;
-    font-weight: 700 !important;
-    z-index: 2 !important;
-    color: #333 !important;
-    text-shadow: 
-      0 0 4px rgba(255, 255, 255, 1),
-      0 0 6px rgba(255, 255, 255, 1),
-      0 1px 2px rgba(255, 255, 255, 0.95);
+    font-size: 0.9rem;
   }
   
   .calendar-grid {
@@ -1830,10 +1807,6 @@ body.dark-theme #welcome-admin {
     overflow: visible;
   }
   
-  .calendar-cell {
-    min-height: 50px;
-  }
-  
   /* Asegurar que el contenido de la derecha se vea */
   .side-panel {
     overflow: visible;
@@ -1842,11 +1815,6 @@ body.dark-theme #welcome-admin {
   .calendar-layout {
     grid-template-columns: 1fr;
     gap: 1rem;
-  }
-
-  /* Ajustar el tamaño de las celdas del calendario en móviles */
-  .calendar-cell {
-    min-height: 60px !important;
   }
 
   .time-slot-btn {
