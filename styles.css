@@ -828,18 +828,24 @@ body.dark-theme .auth-helper {
   position: absolute !important;
   top: 0.5rem !important;
   right: 0.5rem !important;
-  z-index: 100 !important;
-  font-weight: 700 !important;
-  font-size: 1.1rem !important;
+  z-index: 1000 !important;
+  font-weight: 800 !important;
+  font-size: 1.2rem !important;
   text-align: center;
-  color: #1a1a1a !important;
+  color: #000000 !important;
   line-height: 1;
-  /* Asegurar que el número sea visible en computador */
-  text-shadow: 0 0 4px rgba(255, 255, 255, 1), 0 1px 3px rgba(255, 255, 255, 0.8);
+  /* Asegurar que el número sea visible en computador con sombra blanca fuerte */
+  text-shadow: 
+    0 0 6px rgba(255, 255, 255, 1),
+    0 0 8px rgba(255, 255, 255, 1),
+    0 1px 3px rgba(255, 255, 255, 0.9),
+    -1px -1px 2px rgba(255, 255, 255, 0.9),
+    1px 1px 2px rgba(255, 255, 255, 0.9);
   pointer-events: none;
   /* Asegurar que siempre sea visible */
   opacity: 1 !important;
   visibility: visible !important;
+  display: block !important;
 }
 
 /* Colores según estado de citas - sobre el rosa claro base */
@@ -1782,11 +1788,11 @@ body.dark-theme #welcome-admin {
 
   /* Ajustes específicos para corazones en móviles - CORAZONES COMPLETOS */
   .calendar-heart {
-    min-height: 50px;
-    max-height: 50px;
+    min-height: 48px;
+    max-height: 48px;
     overflow: visible !important;
-    width: 100%;
-    margin: 0;
+    width: calc(100% - 6px) !important;
+    margin: 0 3px !important;
     padding-bottom: 100%;
     height: 0;
     /* Asegurar que el corazón se vea completo sin cortarse */
@@ -1796,18 +1802,24 @@ body.dark-theme #welcome-admin {
   }
 
   .calendar-heart .day-number {
-    font-size: 0.7rem !important;
+    font-size: 0.8rem !important;
     top: 0.3rem !important;
     right: 0.3rem !important;
     left: auto !important;
     transform: none !important;
-    font-weight: 700 !important;
-    z-index: 100 !important;
-    color: #1a1a1a !important;
-    text-shadow: 0 0 3px rgba(255, 255, 255, 1), 0 1px 2px rgba(255, 255, 255, 0.9);
+    font-weight: 800 !important;
+    z-index: 1000 !important;
+    color: #000000 !important;
+    text-shadow: 
+      0 0 5px rgba(255, 255, 255, 1),
+      0 0 7px rgba(255, 255, 255, 1),
+      0 1px 3px rgba(255, 255, 255, 0.95),
+      -1px -1px 2px rgba(255, 255, 255, 0.95),
+      1px 1px 2px rgba(255, 255, 255, 0.95);
     pointer-events: none;
     opacity: 1 !important;
     visibility: visible !important;
+    display: block !important;
   }
 
   .calendar-grid {
