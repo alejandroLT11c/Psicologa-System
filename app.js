@@ -1316,10 +1316,12 @@ function handleDayClick(date) {
     const label = document.getElementById("selected-day-text");
     if (label) label.textContent = formatDateLong(date);
     const iso = toISODate(date);
+    const dayOfWeek = date.getDay(); // 0 = Domingo, 6 = Sábado
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-    // En móvil usamos modal; si el día está deshabilitado o es pasado, no abrimos nada
+    // En móvil usamos modal; si el día está deshabilitado, es fin de semana o es pasado, no abrimos nada
     if (window.innerWidth <= 768) {
-      if (disabledDays.has(iso)) {
+      if (disabledDays.has(iso) || isWeekend) {
         showToast("Este día ha sido deshabilitado por la psicóloga.", "error");
         return;
       }
@@ -1332,6 +1334,15 @@ function handleDayClick(date) {
         openDayBookingModal(date);
       });
     } else {
+      // En desktop también verificamos si es fin de semana o está deshabilitado
+      if (disabledDays.has(iso) || isWeekend) {
+        showToast("Este día ha sido deshabilitado por la psicóloga.", "error");
+        return;
+      }
+      if (isPastDay(date)) {
+        showToast("No es posible agendar citas en fechas pasadas.", "error");
+        return;
+      }
       loadDisabledHoursForDate(iso).then(() => {
         renderPatientTimeSlots();
       });
