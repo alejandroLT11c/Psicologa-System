@@ -1922,8 +1922,16 @@ function openAddUserModal() {
     <input type="text" id="new-user-id-number" required />
   `;
 
+  const phoneGroup = document.createElement("div");
+  phoneGroup.className = "auth-field-group";
+  phoneGroup.innerHTML = `
+    <label>Teléfono</label>
+    <input type="tel" id="new-user-phone" required />
+  `;
+
   form.appendChild(nameGroup);
   form.appendChild(idNumberGroup);
+  form.appendChild(phoneGroup);
 
   const actions = document.createElement("div");
   actions.className = "modal-actions";
