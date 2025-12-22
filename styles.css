@@ -794,77 +794,81 @@ body.dark-theme .auth-helper {
   flex-direction: column;
 }
 
-/* Sobrescribir estilos para los corazones */
+/* 1. La celda es solo el contenedor (la caja invisible) */
 .calendar-cell.calendar-heart {
-  border-radius: 0; /* Sin border-radius para que el clip-path funcione */
-  padding: 0; /* Sin padding para que el clip-path funcione correctamente */
-}
-
-/* Forma de corazón completa usando clip-path - TODOS los días */
-.calendar-heart {
-  background: #ffb3d9; /* Rosa claro para todos los días */
-  border: none;
-  position: relative;
-  overflow: visible;
-  /* Clip-path para dar forma de corazón perfecto - path cerrado sin puntitas */
-  clip-path: path("M50 85 L45 80 C20 55, 5 40, 5 25 C5 15, 12 8, 22 8 C30 8, 36 12, 40 18 C44 12, 50 8, 58 8 C68 8, 75 15, 75 25 C75 40, 60 55, 35 80 L50 85 Z");
-  -webkit-clip-path: path("M50 85 L45 80 C20 55, 5 40, 5 25 C5 15, 12 8, 22 8 C30 8, 36 12, 40 18 C44 12, 50 8, 58 8 C68 8, 75 15, 75 25 C75 40, 60 55, 35 80 L50 85 Z");
-  /* Asegurar que el contenido se mantenga dentro */
+  position: relative; /* Necesario para centrar el corazón */
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  justify-content: flex-start;
-  /* Ajustar el tamaño para que el corazón se vea bien */
-  width: 100%;
-  height: 0;
-  padding-bottom: 100%; /* Mantener aspecto cuadrado */
   min-height: 70px;
-  /* Asegurar que el clip-path se renderice correctamente */
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
+  padding: 0;
+  border-radius: 0;
+  background: transparent; /* Sin fondo en la celda */
+  cursor: pointer;
+  z-index: 1;
 }
 
+/* 2. El número del día (para que quede encima del corazón) */
 .calendar-heart .day-number {
-  position: absolute !important;
-  top: 0.5rem !important;
-  right: 0.5rem !important;
-  z-index: 1000 !important;
-  font-weight: 800 !important;
-  font-size: 1.2rem !important;
-  text-align: center;
-  color: #000000 !important;
-  line-height: 1;
-  /* Asegurar que el número sea visible en computador con sombra blanca fuerte */
-  text-shadow: 
-    0 0 6px rgba(255, 255, 255, 1),
-    0 0 8px rgba(255, 255, 255, 1),
-    0 1px 3px rgba(255, 255, 255, 0.9),
-    -1px -1px 2px rgba(255, 255, 255, 0.9),
-    1px 1px 2px rgba(255, 255, 255, 0.9);
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  z-index: 2; /* El número va ENCIMA del corazón */
+  font-weight: 700;
+  font-size: 1rem;
+  color: #333; /* Color del texto por defecto */
   pointer-events: none;
-  /* Asegurar que siempre sea visible */
-  opacity: 1 !important;
-  visibility: visible !important;
-  display: block !important;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 1), 0 1px 3px rgba(255, 255, 255, 0.9);
+  line-height: 1;
 }
 
-/* Colores según estado de citas - sobre el rosa claro base */
-.calendar-heart.heart-pending {
-  background: #ffd633; /* Amarillo para pendientes */
+/* 3. El Corazón: Usamos ::before para dibujarlo detrás del número */
+.calendar-heart::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  /* TAMAÑO FIJO: Esto evita que se deforme en celulares */
+  width: 50px;
+  height: 50px;
+  background-color: #ffb3d9; /* Color rosa por defecto (corazón vacío) */
+  /* Truco moderno de máscara: Usamos SVG para crear un corazón perfecto */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50,85 L45,80 C20,55 5,40 5,25 C5,15 12,8 22,8 C30,8 36,12 40,18 C44,12 50,8 58,8 C68,8 75,15 75,25 C75,40 60,55 35,80 Z' fill='black'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50,85 L45,80 C20,55 5,40 5,25 C5,15 12,8 22,8 C30,8 36,12 40,18 C44,12 50,8 58,8 C68,8 75,15 75,25 C75,40 60,55 35,80 Z' fill='black'/%3E%3C/svg%3E");
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-position: center;
+  mask-size: contain;
+  -webkit-mask-size: contain;
+  /* Centrar el corazón */
+  transform: translate(-50%, -50%);
+  -webkit-transform: translate(-50%, -50%);
+  z-index: 1; /* El corazón va DETRÁS del número */
+  opacity: 1;
+  transition: all 0.3s ease;
+}
+
+/* 4. Colores según el estado (definidos en tu app.js) */
+.calendar-heart.heart-pending::before {
+  background-color: #ffd633; /* Amarillo pendiente */
+  opacity: 1;
 }
 
 .calendar-heart.heart-pending .day-number {
   color: #333;
 }
 
-.calendar-heart.heart-confirmed {
-  background: #22c55e; /* Verde para confirmadas */
-  color: #ffffff;
+.calendar-heart.heart-confirmed::before {
+  background-color: #22c55e; /* Verde éxito */
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.1); /* Un poquito más grande */
+  -webkit-transform: translate(-50%, -50%) scale(1.1);
 }
 
 .calendar-heart.heart-confirmed .day-number {
   color: #ffffff;
-  text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 .calendar-cell.empty {
@@ -874,53 +878,59 @@ body.dark-theme .auth-helper {
 
 .calendar-heart:hover:not(.empty):not(.disabled):not(.past) {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-  transform: translateY(-2px) scale(1.05);
 }
 
-.calendar-heart:hover:not(.empty):not(.disabled):not(.past):not(.heart-pending):not(.heart-confirmed) {
-  background: #ff99cc; /* Rosa un poco más oscuro al hover */
-  transform: translateY(-2px) scale(1.05);
+.calendar-heart:hover:not(.empty):not(.disabled):not(.past):not(.heart-pending):not(.heart-confirmed)::before {
+  background-color: #ff99cc; /* Rosa un poco más oscuro al hover */
+  transform: translate(-50%, -50%) scale(1.1);
+  -webkit-transform: translate(-50%, -50%) scale(1.1);
 }
 
 .calendar-cell .day-number {
   font-weight: 600;
 }
 
-.calendar-heart.today {
-  background: var(--coop-blue);
-  color: var(--white);
+.calendar-heart.today::before {
+  background-color: var(--coop-blue);
+  opacity: 1;
   animation: pulseToday 2.2s ease-in-out infinite;
 }
 
 .calendar-heart.today .day-number {
   color: #ffffff;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.calendar-heart.today.heart-pending {
-  background: #ffd633;
+.calendar-heart.today.heart-pending::before {
+  background-color: #ffd633;
 }
 
 .calendar-heart.today.heart-pending .day-number {
   color: #333;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 1), 0 1px 3px rgba(255, 255, 255, 0.9);
 }
 
-.calendar-heart.today.heart-confirmed {
-  background: #22c55e;
+.calendar-heart.today.heart-confirmed::before {
+  background-color: #22c55e;
 }
 
 .calendar-heart.today.heart-confirmed .day-number {
   color: #ffffff;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.calendar-heart.disabled::before {
+  background-color: #c0c0c0;
+  opacity: 0.6;
 }
 
 .calendar-heart.disabled {
-  background: #c0c0c0;
-  color: #444444;
   cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .calendar-heart.disabled .day-number {
   color: #444444;
+  text-decoration: line-through;
 }
 
 .calendar-cell.past {
@@ -1788,52 +1798,40 @@ body.dark-theme #welcome-admin {
 
   /* Ajustes específicos para corazones en móviles - CORAZONES COMPLETOS */
   .calendar-heart {
-    min-height: 48px;
-    max-height: 48px;
-    overflow: visible !important;
-    width: calc(100% - 6px) !important;
-    margin: 0 3px !important;
-    padding-bottom: 100%;
-    height: 0;
-    /* Asegurar que el corazón se vea completo sin cortarse */
-    box-sizing: border-box;
-    /* Asegurar que los elementos hijos sean visibles */
-    isolation: isolate;
+    min-height: 50px;
+  }
+
+  /* Corazón más pequeño en móvil pero siempre perfecto */
+  .calendar-heart::before {
+    width: 40px !important;
+    height: 40px !important;
   }
 
   .calendar-heart .day-number {
     font-size: 0.8rem !important;
     top: 0.3rem !important;
     right: 0.3rem !important;
-    left: auto !important;
-    transform: none !important;
-    font-weight: 800 !important;
-    z-index: 1000 !important;
-    color: #000000 !important;
+    font-weight: 700 !important;
+    z-index: 2 !important;
+    color: #333 !important;
     text-shadow: 
-      0 0 5px rgba(255, 255, 255, 1),
-      0 0 7px rgba(255, 255, 255, 1),
-      0 1px 3px rgba(255, 255, 255, 0.95),
-      -1px -1px 2px rgba(255, 255, 255, 0.95),
-      1px 1px 2px rgba(255, 255, 255, 0.95);
-    pointer-events: none;
-    opacity: 1 !important;
-    visibility: visible !important;
-    display: block !important;
+      0 0 4px rgba(255, 255, 255, 1),
+      0 0 6px rgba(255, 255, 255, 1),
+      0 1px 2px rgba(255, 255, 255, 0.95);
   }
-
+  
   .calendar-grid {
     gap: 0.4rem;
     padding: 0.5rem;
   }
-
+  
   .calendar-card {
-    padding: 1rem 0.8rem;
+    padding: 0.8rem 0.6rem;
     overflow: visible;
   }
   
   .calendar-cell {
-    min-height: 60px;
+    min-height: 50px;
   }
   
   /* Asegurar que el contenido de la derecha se vea */
