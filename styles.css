@@ -803,7 +803,7 @@ body.dark-theme .auth-helper {
   background: #ffb3d9; /* Rosa claro para todos los días */
   border: none;
   position: relative;
-  overflow: hidden;
+  overflow: visible; /* Cambiado a visible para que el clip-path no corte el contenido */
   /* Clip-path para dar forma de corazón perfecto - path cerrado sin puntitas */
   /* Path optimizado: corazón simétrico y suave */
   clip-path: path("M50 85 L45 80 C20 55, 5 40, 5 25 C5 15, 12 8, 22 8 C30 8, 36 12, 40 18 C44 12, 50 8, 58 8 C68 8, 75 15, 75 25 C75 40, 60 55, 35 80 L50 85 Z");
@@ -819,6 +819,9 @@ body.dark-theme .auth-helper {
   height: 0;
   padding-bottom: 100%; /* Mantener aspecto cuadrado */
   min-height: 70px;
+  /* Asegurar que el clip-path se renderice correctamente */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .calendar-heart .day-number {
@@ -1767,6 +1770,32 @@ body.dark-theme #welcome-admin {
 
   .calendar-cell {
     min-height: 52px;
+  }
+
+  /* Ajustes específicos para corazones en móviles */
+  .calendar-heart {
+    min-height: 50px;
+    padding-top: 0.35rem;
+    overflow: visible; /* Asegurar que el clip-path se vea completo */
+    /* Asegurar que el corazón tenga suficiente espacio */
+    width: calc(100% - 2px);
+    margin: 1px;
+  }
+
+  .calendar-heart .day-number {
+    font-size: 0.75rem;
+    top: 0.35rem;
+    font-weight: 600;
+  }
+
+  .calendar-grid {
+    gap: 0.25rem;
+    padding: 0.2rem;
+  }
+
+  /* Asegurar que el contenedor del calendario tenga suficiente espacio */
+  .calendar-card {
+    padding: 0.75rem;
   }
 
   .time-slot-btn {
