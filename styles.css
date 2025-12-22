@@ -794,13 +794,16 @@ body.dark-theme .auth-helper {
   flex-direction: column;
 }
 
-/* 1. La celda ahora es solo el contenedor flexible para centrar todo */
+/* =========================================
+ESTILOS DE CORAZONES (Actualizado)
+========================================= */
+/* 1. Contenedor de la celda */
 .calendar-cell.calendar-heart {
   position: relative;
   display: flex;
   justify-content: center; /* Centra horizontalmente */
   align-items: center; /* Centra verticalmente */
-  min-height: 60px; /* Altura de la celda */
+  min-height: 80px; /* Aumentamos altura en PC para que quepa el corazón */
   background: transparent !important; /* Quitamos el fondo gris del cuadro */
   border-radius: 0;
   padding: 0;
@@ -809,30 +812,30 @@ body.dark-theme .auth-helper {
   cursor: pointer;
 }
 
-/* 2. El Número: Ahora centrado y encima del corazón */
+/* 2. El Número (Más grande en PC) */
 .calendar-heart .day-number {
   position: relative; /* Ya no es absolute - el flexbox lo centra */
   z-index: 5; /* Capa superior */
   font-weight: 700;
-  font-size: 1rem; /* Tamaño del número */
+  font-size: 1.2rem; /* Aumentamos la letra en PC (antes 1rem) */
   color: #444; /* Color gris oscuro para mejor contraste con rosa claro */
-  margin-top: -3px; /* Ajuste visual fino para que quede perfecto en el centro */
+  margin-top: -4px; /* Ajuste fino para centrado vertical óptimo */
   pointer-events: none; /* Que el click traspase al corazón */
   line-height: 1;
   text-shadow: 0 0 4px rgba(255, 255, 255, 1), 0 1px 3px rgba(255, 255, 255, 0.9);
 }
 
-/* 3. El Corazón (Fondo): Más grande y sin la "puntica" de globo */
+/* 3. El Corazón (Fondo) - AHORA MÁS GRANDE EN PC */
 .calendar-heart::before {
   content: "";
   position: absolute;
   top: 50%;
   left: 50%;
-  /* TAMAÑO GRANDE: Aquí controlas qué tan grande se ve */
-  width: 48px;
-  height: 48px;
+  /* TAMAÑO GRANDE PARA PC */
+  width: 64px; /* Antes 48px */
+  height: 64px; /* Antes 48px */
   background-color: #ffc0cb; /* Rosa claro por defecto */
-  /* NUEVO SVG: Un corazón más "gordito" y clásico (Material Design) */
+  /* SVG Geométrico (Material Design) */
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' fill='black'/%3E%3C/svg%3E");
   -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' fill='black'/%3E%3C/svg%3E");
   mask-repeat: no-repeat;
@@ -1782,19 +1785,23 @@ body.dark-theme #welcome-admin {
     height: 40px !important;
   }
 
-  /* --- AJUSTE PARA MÓVIL (MUY IMPORTANTE) --- */
+  /* =========================================
+  MEDIA QUERY: AJUSTES PARA MÓVIL
+  (Esto asegura que en el celular sigan siendo pequeños)
+  ========================================= */
   .calendar-cell.calendar-heart {
-    min-height: 50px; /* Celdas un poco más compactas */
+    min-height: 50px; /* Celda compacta en móvil */
   }
 
-  /* Ajustamos el tamaño del corazón en celular para que no se choquen */
+  /* Forzamos el tamaño pequeño en celulares */
   .calendar-heart::before {
-    width: 40px;
-    height: 40px;
+    width: 42px !important;
+    height: 42px !important;
   }
 
   .calendar-heart .day-number {
-    font-size: 0.9rem;
+    font-size: 0.9rem; /* Número pequeño en móvil */
+    margin-top: -2px;
   }
   
   .calendar-grid {
