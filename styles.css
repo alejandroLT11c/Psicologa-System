@@ -826,14 +826,17 @@ body.dark-theme .auth-helper {
 
 .calendar-heart .day-number {
   position: absolute;
-  top: 0.3rem;
-  right: 0.3rem;
+  top: 0.4rem;
+  right: 0.4rem;
   z-index: 10;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 1rem;
   text-align: center;
   color: #333;
   line-height: 1;
+  /* Asegurar que el número sea visible en computador */
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.9), 0 1px 2px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
 }
 
 /* Colores según estado de citas - sobre el rosa claro base */
@@ -852,6 +855,7 @@ body.dark-theme .auth-helper {
 
 .calendar-heart.heart-confirmed .day-number {
   color: #ffffff;
+  text-shadow: 0 0 2px rgba(0, 0, 0, 0.3);
 }
 
 .calendar-cell.empty {
@@ -1773,24 +1777,30 @@ body.dark-theme #welcome-admin {
     min-height: 52px;
   }
 
-  /* Ajustes específicos para corazones en móviles - CORAZONES COMPLETOS */
+  /* Ajustes específicos para corazones en móviles - CORAZONES COMPLETOS como en la imagen */
   .calendar-heart {
-    min-height: 60px;
+    min-height: 45px;
+    max-height: 45px;
     overflow: visible;
     width: 100%;
     margin: 0;
     padding-bottom: 100%;
     height: 0;
+    /* Asegurar que el corazón se vea completo sin cortarse */
+    box-sizing: border-box;
   }
 
   .calendar-heart .day-number {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     top: 0.25rem;
     right: 0.25rem;
     left: auto;
     transform: none;
     font-weight: 700;
     z-index: 10;
+    color: #333;
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.95);
+    pointer-events: none;
   }
 
   .calendar-grid {
