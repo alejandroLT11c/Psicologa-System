@@ -766,8 +766,10 @@ body.dark-theme .auth-helper {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 0.4rem;
-  align-items: center;
-  justify-items: center;
+  align-items: stretch;
+  justify-items: stretch;
+  /* Asegurar que las celdas tengan el mismo tamaño */
+  grid-auto-rows: 1fr;
 }
 
 .calendar-day-name {
@@ -806,8 +808,12 @@ body.dark-theme .auth-helper {
   overflow: visible; /* Cambiado a visible para que el clip-path no corte el contenido */
   /* Clip-path para dar forma de corazón perfecto - path cerrado sin puntitas */
   /* Path optimizado: corazón simétrico y suave */
+  /* Clip-path optimizado para que se vea bien en todos los tamaños */
   clip-path: path("M50 85 L45 80 C20 55, 5 40, 5 25 C5 15, 12 8, 22 8 C30 8, 36 12, 40 18 C44 12, 50 8, 58 8 C68 8, 75 15, 75 25 C75 40, 60 55, 35 80 L50 85 Z");
   -webkit-clip-path: path("M50 85 L45 80 C20 55, 5 40, 5 25 C5 15, 12 8, 22 8 C30 8, 36 12, 40 18 C44 12, 50 8, 58 8 C68 8, 75 15, 75 25 C75 40, 60 55, 35 80 L50 85 Z");
+  /* Asegurar que el clip-path se renderice correctamente en todos los navegadores */
+  -webkit-perspective: 1000;
+  perspective: 1000;
   /* Asegurar que el contenido se mantenga dentro */
   display: flex;
   flex-direction: column;
@@ -1774,28 +1780,51 @@ body.dark-theme #welcome-admin {
 
   /* Ajustes específicos para corazones en móviles */
   .calendar-heart {
-    min-height: 50px;
-    padding-top: 0.35rem;
-    overflow: visible; /* Asegurar que el clip-path se vea completo */
-    /* Asegurar que el corazón tenga suficiente espacio */
-    width: calc(100% - 2px);
-    margin: 1px;
+    min-height: 55px !important;
+    max-height: none !important;
+    padding-top: 0.4rem;
+    overflow: visible !important;
+    /* Asegurar que el corazón tenga suficiente espacio y no se corte */
+    width: 100% !important;
+    margin: 0;
+    /* Ajustar el aspect ratio para móviles - usar aspect-ratio en lugar de padding-bottom */
+    aspect-ratio: 1;
+    padding-bottom: 0;
+    height: auto;
+    /* Mejorar el renderizado del clip-path */
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    will-change: transform;
+    /* Asegurar que el clip-path se vea completo */
+    transform: translateZ(0) scale(1);
+    -webkit-transform: translateZ(0) scale(1);
   }
 
   .calendar-heart .day-number {
-    font-size: 0.75rem;
-    top: 0.35rem;
+    font-size: 0.8rem;
+    top: 0.4rem;
     font-weight: 600;
+    /* Asegurar que el número sea visible */
+    z-index: 10;
   }
 
   .calendar-grid {
-    gap: 0.25rem;
-    padding: 0.2rem;
+    gap: 0.35rem;
+    padding: 0.4rem 0.2rem;
+    /* Asegurar que haya suficiente espacio entre los corazones */
+    align-items: stretch;
+    justify-items: stretch;
   }
 
   /* Asegurar que el contenedor del calendario tenga suficiente espacio */
   .calendar-card {
-    padding: 0.75rem;
+    padding: 0.8rem;
+    overflow: visible;
+  }
+
+  /* Ajustar el tamaño de las celdas del calendario en móviles */
+  .calendar-cell {
+    min-height: 60px !important;
   }
 
   .time-slot-btn {
