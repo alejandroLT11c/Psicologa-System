@@ -96,10 +96,19 @@ db.serialize(() => {
   // Crear usuarios base: ejemplo y psicóloga
   db.run(
     `
-    INSERT OR IGNORE INTO users (id, name, id_number, role)
+    INSERT OR IGNORE INTO users (id, name, id_number, phone, role)
     VALUES
-      (1, 'Usuario de ejemplo', '1234567890', 'user'),
-      (2, 'Psicóloga Valentina', '9876543210', 'admin')
+      (1, 'Usuario de ejemplo', '9999999999', '3001234567', 'user'),
+      (2, 'Valentina', '1234567890', '3001234567', 'admin')
+  `
+  );
+  
+  // Actualizar el usuario admin si ya existe para asegurar los datos correctos
+  db.run(
+    `
+    UPDATE users
+    SET name = 'Valentina', id_number = '1234567890', phone = '3001234567'
+    WHERE id = 2 AND role = 'admin'
   `
   );
 });

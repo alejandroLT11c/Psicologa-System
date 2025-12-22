@@ -878,9 +878,15 @@ function openAppointmentDetailsModal(appointment) {
     appointment.userIdNumber || "No registrado"
   }`;
 
+  const pPhone = document.createElement("p");
+  pPhone.innerHTML = `<strong>Teléfono:</strong> ${
+    appointment.userPhone || "No registrado"
+  }`;
+
   body.appendChild(pDate);
   body.appendChild(pUser);
   body.appendChild(pIdNumber);
+  body.appendChild(pPhone);
 
   if (appointment.userNote && appointment.userNote.trim()) {
     const pNote = document.createElement("p");
@@ -935,8 +941,19 @@ function openProfileModal() {
   idNumberGroup.appendChild(idNumberLabel);
   idNumberGroup.appendChild(idNumberInput);
 
+  const phoneGroup = document.createElement("div");
+  phoneGroup.className = "auth-field-group";
+  const phoneLabel = document.createElement("label");
+  phoneLabel.textContent = "Teléfono";
+  const phoneInput = document.createElement("input");
+  phoneInput.type = "tel";
+  phoneInput.value = currentUser.phone || "";
+  phoneGroup.appendChild(phoneLabel);
+  phoneGroup.appendChild(phoneInput);
+
   form.appendChild(nameGroup);
   form.appendChild(idNumberGroup);
+  form.appendChild(phoneGroup);
 
   const actions = document.createElement("div");
   actions.className = "modal-actions";
@@ -952,7 +969,8 @@ function openProfileModal() {
   saveBtn.addEventListener("click", () => {
     const newName = nameInput.value.trim();
     const newIdNumber = idNumberInput.value.trim();
-    updateUserProfile(newName, newIdNumber);
+    const newPhone = phoneInput.value.trim();
+    updateUserProfile(newName, newIdNumber, newPhone);
   });
 
   actions.appendChild(cancelBtn);
@@ -976,7 +994,7 @@ async function updateUserProfile(name, idNumber) {
     const res = await fetch(`${API_BASE}/users/${currentUser.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, idNumber }),
+      body: JSON.stringify({ name, idNumber, phone }),
     });
 
     const data = await res.json();
@@ -989,6 +1007,7 @@ async function updateUserProfile(name, idNumber) {
       ...currentUser,
       name: data.name,
       idNumber: data.idNumber,
+      phone: data.phone,
     };
     localStorage.setItem("psico_user", JSON.stringify(currentUser));
     updateUserDisplay();
@@ -1860,6 +1879,7 @@ function renderUsersList() {
     userInfo.innerHTML = `
       <div style="font-weight: 600; margin-bottom: 0.25rem;">${user.name}</div>
       <div style="font-size: 0.85rem; color: #6b7280;">ID: ${user.idNumber || "No registrado"}</div>
+      <div style="font-size: 0.85rem; color: #6b7280;">Tel: ${user.phone || "No registrado"}</div>
     `;
 
     const deleteBtn = document.createElement("button");
@@ -1919,13 +1939,14 @@ function openAddUserModal() {
   saveBtn.addEventListener("click", async () => {
     const name = document.getElementById("new-user-name").value.trim();
     const idNumber = document.getElementById("new-user-id-number").value.trim();
+    const phone = document.getElementById("new-user-phone").value.trim();
 
-    if (!name || !idNumber) {
-      showToast("Nombre completo y número de identificación son obligatorios.", "error");
+    if (!name || !idNumber || !phone) {
+      showToast("Nombre completo, número de identificación y teléfono son obligatorios.", "error");
       return;
     }
 
-    await createUser(name, idNumber);
+    await createUser(name, idNumber, phone);
   });
 
   actions.appendChild(cancelBtn);
@@ -1935,13 +1956,13 @@ function openAddUserModal() {
   body.appendChild(actions);
 }
 
-async function createUser(name, idNumber) {
+async function createUser(name, idNumber, phone) {
   try {
     showLoader();
     const res = await fetch(`${API_BASE}/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, idNumber }),
+      body: JSON.stringify({ name, idNumber, phone }),
     });
 
     const data = await res.json();

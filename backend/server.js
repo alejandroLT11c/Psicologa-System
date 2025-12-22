@@ -43,16 +43,17 @@ async function createNotification(userId, type, message) {
 
 // Crear usuario (solo para admin/psicóloga)
 app.post("/api/users", async (req, res) => {
-  const { name, idNumber } = req.body;
+  const { name, idNumber, phone } = req.body;
 
-  if (!name || !idNumber) {
+  if (!name || !idNumber || !phone) {
     return res
       .status(400)
-      .json({ error: "Nombre completo y número de identificación son obligatorios." });
+      .json({ error: "Nombre completo, número de identificación y teléfono son obligatorios." });
   }
 
   try {
     const idNumberClean = String(idNumber).trim();
+    const phoneClean = String(phone).trim();
 
     const existing = await runQuery(
       "SELECT id FROM users WHERE id_number = ?",
@@ -64,16 +65,17 @@ app.post("/api/users", async (req, res) => {
 
     const result = await runExecute(
       `
-      INSERT INTO users (name, id_number, role)
-      VALUES (?, ?, 'user')
+      INSERT INTO users (name, id_number, phone, role)
+      VALUES (?, ?, ?, 'user')
     `,
-      [name.trim(), idNumberClean]
+      [name.trim(), idNumberClean, phoneClean]
     );
 
     const user = {
       id: result.id,
       name: name.trim(),
       idNumber: idNumberClean,
+      phone: phoneClean,
       role: "user",
     };
 
@@ -88,7 +90,7 @@ app.post("/api/users", async (req, res) => {
 app.get("/api/users", async (req, res) => {
   try {
     const rows = await runQuery(
-      "SELECT id, name, id_number, role FROM users WHERE role = 'user' ORDER BY name ASC"
+      "SELECT id, name, id_number, phone, role FROM users WHERE role = 'user' ORDER BY name ASC"
     );
     res.json(rows);
   } catch (err) {
@@ -139,16 +141,17 @@ app.delete("/api/users/:userId", async (req, res) => {
 // Actualizar datos básicos de un usuario
 app.put("/api/users/:userId", async (req, res) => {
   const userId = parseInt(req.params.userId, 10);
-  const { name, idNumber } = req.body;
+  const { name, idNumber, phone } = req.body;
 
-  if (!userId || !name || !idNumber) {
+  if (!userId || !name || !idNumber || !phone) {
     return res
       .status(400)
-      .json({ error: "Nombre completo y número de identificación son obligatorios." });
+      .json({ error: "Nombre completo, número de identificación y teléfono son obligatorios." });
   }
 
   try {
     const idNumberClean = String(idNumber).trim();
+    const phoneClean = String(phone).trim();
 
     // Verificar que el número de identificación no esté siendo usado por otro usuario
     const existing = await runQuery(
@@ -162,14 +165,14 @@ app.put("/api/users/:userId", async (req, res) => {
     await runExecute(
       `
       UPDATE users
-      SET name = ?, id_number = ?
+      SET name = ?, id_number = ?, phone = ?
       WHERE id = ?
     `,
-      [name.trim(), idNumberClean, userId]
+      [name.trim(), idNumberClean, phoneClean, userId]
     );
 
     const rows = await runQuery(
-      "SELECT id, name, id_number, role FROM users WHERE id = ?",
+      "SELECT id, name, id_number, phone, role FROM users WHERE id = ?",
       [userId]
     );
     if (rows.length === 0) {
@@ -252,7 +255,7 @@ app.post("/api/auth/login", async (req, res) => {
     const idNumberClean = String(idNumber).trim();
 
     const users = await runQuery(
-      "SELECT id, name, id_number, role FROM users WHERE name = ? AND id_number = ?",
+      "SELECT id, name, id_number, phone, role FROM users WHERE name = ? AND id_number = ?",
       [nameClean, idNumberClean]
     );
     const user = users[0];
@@ -265,6 +268,7 @@ app.post("/api/auth/login", async (req, res) => {
       id: user.id,
       name: user.name,
       idNumber: user.id_number,
+      phone: user.phone,
       role: user.role,
     });
   } catch (err) {
@@ -337,7 +341,7 @@ app.get("/api/appointments", async (req, res) => {
   try {
     const rows = await runQuery(
       `
-      SELECT a.*, u.name as userName, u.id_number as userIdNumber
+      SELECT a.*, u.name as userName, u.id_number as userIdNumber, u.phone as userPhone
       FROM appointments a
       JOIN users u ON u.id = a.user_id
       WHERE a.date = ?
@@ -357,7 +361,7 @@ app.get("/api/appointments-all", async (req, res) => {
   try {
     const rows = await runQuery(
       `
-      SELECT a.*, u.name AS userName, u.id_number AS userIdNumber
+      SELECT a.*, u.name AS userName, u.id_number AS userIdNumber, u.phone AS userPhone
       FROM appointments a
       JOIN users u ON u.id = a.user_id
       ORDER BY a.date ASC, a.time ASC
