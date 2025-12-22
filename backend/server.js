@@ -43,41 +43,37 @@ async function createNotification(userId, type, message) {
 
 // Crear usuario (solo para admin/psicóloga)
 app.post("/api/users", async (req, res) => {
-  const { name, email, phone, password } = req.body;
+  const { name, idNumber } = req.body;
 
-  if (!name || !email || !password || !phone) {
+  if (!name || !idNumber) {
     return res
       .status(400)
-      .json({ error: "Nombre, correo, teléfono y contraseña son obligatorios." });
+      .json({ error: "Nombre completo y número de identificación son obligatorios." });
   }
 
   try {
-    const emailNorm = String(email).trim().toLowerCase();
+    const idNumberClean = String(idNumber).trim();
 
     const existing = await runQuery(
-      "SELECT id FROM users WHERE lower(email) = ?",
-      [emailNorm]
+      "SELECT id FROM users WHERE id_number = ?",
+      [idNumberClean]
     );
     if (existing.length > 0) {
-      return res.status(409).json({ error: "Ya existe un usuario con ese correo." });
+      return res.status(409).json({ error: "Ya existe un usuario con ese número de identificación." });
     }
-
-    const hash = await bcrypt.hash(password, 10);
-    const phoneClean = String(phone).trim();
 
     const result = await runExecute(
       `
-      INSERT INTO users (name, email, phone, role, password_hash)
-      VALUES (?, ?, ?, 'user', ?)
+      INSERT INTO users (name, id_number, role)
+      VALUES (?, ?, 'user')
     `,
-      [name.trim(), emailNorm, phoneClean, hash]
+      [name.trim(), idNumberClean]
     );
 
     const user = {
       id: result.id,
       name: name.trim(),
-      email: emailNorm,
-      phone: phoneClean,
+      idNumber: idNumberClean,
       role: "user",
     };
 
@@ -92,7 +88,7 @@ app.post("/api/users", async (req, res) => {
 app.get("/api/users", async (req, res) => {
   try {
     const rows = await runQuery(
-      "SELECT id, name, email, phone, role FROM users WHERE role = 'user' ORDER BY name ASC"
+      "SELECT id, name, id_number, role FROM users WHERE role = 'user' ORDER BY name ASC"
     );
     res.json(rows);
   } catch (err) {
@@ -143,38 +139,37 @@ app.delete("/api/users/:userId", async (req, res) => {
 // Actualizar datos básicos de un usuario
 app.put("/api/users/:userId", async (req, res) => {
   const userId = parseInt(req.params.userId, 10);
-  const { name, email, phone } = req.body;
+  const { name, idNumber } = req.body;
 
-  if (!userId || !name || !email || !phone) {
+  if (!userId || !name || !idNumber) {
     return res
       .status(400)
-      .json({ error: "Nombre, correo y teléfono son obligatorios." });
+      .json({ error: "Nombre completo y número de identificación son obligatorios." });
   }
 
   try {
-    const emailNorm = String(email).trim().toLowerCase();
-    const phoneClean = String(phone).trim();
+    const idNumberClean = String(idNumber).trim();
 
-    // Verificar que el correo no esté siendo usado por otro usuario
+    // Verificar que el número de identificación no esté siendo usado por otro usuario
     const existing = await runQuery(
-      "SELECT id FROM users WHERE lower(email) = ? AND id <> ?",
-      [emailNorm, userId]
+      "SELECT id FROM users WHERE id_number = ? AND id <> ?",
+      [idNumberClean, userId]
     );
     if (existing.length > 0) {
-      return res.status(409).json({ error: "Ya existe un usuario con ese correo." });
+      return res.status(409).json({ error: "Ya existe un usuario con ese número de identificación." });
     }
 
     await runExecute(
       `
       UPDATE users
-      SET name = ?, email = ?, phone = ?
+      SET name = ?, id_number = ?
       WHERE id = ?
     `,
-      [name.trim(), emailNorm, phoneClean, userId]
+      [name.trim(), idNumberClean, userId]
     );
 
     const rows = await runQuery(
-      "SELECT id, name, email, phone, role FROM users WHERE id = ?",
+      "SELECT id, name, id_number, role FROM users WHERE id = ?",
       [userId]
     );
     if (rows.length === 0) {
@@ -246,35 +241,30 @@ app.put("/api/users/:userId/password", async (req, res) => {
 
 // Login (pacientes y psicóloga)
 app.post("/api/auth/login", async (req, res) => {
-  const { email, password } = req.body;
+  const { name, idNumber } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ error: "Correo y contraseña son obligatorios." });
+  if (!name || !idNumber) {
+    return res.status(400).json({ error: "Nombre completo y número de identificación son obligatorios." });
   }
 
   try {
-    const emailNorm = String(email).trim().toLowerCase();
+    const nameClean = String(name).trim();
+    const idNumberClean = String(idNumber).trim();
 
     const users = await runQuery(
-      "SELECT id, name, email, phone, role, password_hash FROM users WHERE lower(email) = ?",
-      [emailNorm]
+      "SELECT id, name, id_number, role FROM users WHERE name = ? AND id_number = ?",
+      [nameClean, idNumberClean]
     );
     const user = users[0];
 
-    if (!user || !user.password_hash) {
-      return res.status(400).json({ error: "Credenciales inválidas." });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) {
-      return res.status(400).json({ error: "Credenciales inválidas." });
+    if (!user) {
+      return res.status(400).json({ error: "Credenciales inválidas. Verifica tu nombre completo y número de identificación." });
     }
 
     res.json({
       id: user.id,
       name: user.name,
-      email: user.email,
-      phone: user.phone,
+      idNumber: user.id_number,
       role: user.role,
     });
   } catch (err) {
@@ -347,7 +337,7 @@ app.get("/api/appointments", async (req, res) => {
   try {
     const rows = await runQuery(
       `
-      SELECT a.*, u.name as userName, u.email as userEmail, u.phone as userPhone
+      SELECT a.*, u.name as userName, u.id_number as userIdNumber
       FROM appointments a
       JOIN users u ON u.id = a.user_id
       WHERE a.date = ?
@@ -367,7 +357,7 @@ app.get("/api/appointments-all", async (req, res) => {
   try {
     const rows = await runQuery(
       `
-      SELECT a.*, u.name AS userName, u.email AS userEmail, u.phone AS userPhone
+      SELECT a.*, u.name AS userName, u.id_number AS userIdNumber
       FROM appointments a
       JOIN users u ON u.id = a.user_id
       ORDER BY a.date ASC, a.time ASC

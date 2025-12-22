@@ -24,6 +24,7 @@ db.serialize(() => {
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
+      id_number TEXT UNIQUE,
       email TEXT,
       phone TEXT,
       role TEXT NOT NULL DEFAULT 'user', -- 'user' o 'admin'
@@ -35,6 +36,13 @@ db.serialize(() => {
   db.run("ALTER TABLE users ADD COLUMN password_hash TEXT", (err) => {
     if (err && !/duplicate column name/i.test(err.message)) {
       console.error("Error al agregar columna password_hash:", err.message);
+    }
+  });
+
+  // Asegurar columna id_number en bases antiguas
+  db.run("ALTER TABLE users ADD COLUMN id_number TEXT", (err) => {
+    if (err && !/duplicate column name/i.test(err.message)) {
+      console.error("Error al agregar columna id_number:", err.message);
     }
   });
 
@@ -85,27 +93,14 @@ db.serialize(() => {
     )
   `);
 
-  // Crear usuarios base: ejemplo y psicóloga con contraseña
-  const adminPasswordHash = bcrypt.hashSync("valentina123", 10);
-
+  // Crear usuarios base: ejemplo y psicóloga
   db.run(
     `
-    INSERT OR IGNORE INTO users (id, name, email, phone, role, password_hash)
+    INSERT OR IGNORE INTO users (id, name, id_number, role)
     VALUES
-      (1, 'Usuario de ejemplo', 'usuario.ejemplo@correo.com', '3001234567', 'user', NULL),
-      (2, 'Psicóloga Valentina', 'valentina@coopurbanospereira.com', '3001234567', 'admin', ?)
-  `,
-    [adminPasswordHash]
-  );
-
-  // Asegurar que la psicóloga tenga contraseña si ya existía sin password_hash
-  db.run(
-    `
-    UPDATE users
-    SET password_hash = ?
-    WHERE id = 2 AND (password_hash IS NULL OR password_hash = '')
-  `,
-    [adminPasswordHash]
+      (1, 'Usuario de ejemplo', '1234567890', 'user'),
+      (2, 'Psicóloga Valentina', '9876543210', 'admin')
+  `
   );
 });
 

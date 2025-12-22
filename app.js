@@ -149,10 +149,8 @@ async function loadUserAppointments() {
       const isCurrentUser = row.user_id === currentUser.id;
       const userName =
         row.userName || row.username || row.name || (isCurrentUser ? currentUser.name : "Paciente");
-      const userEmail =
-        row.userEmail || row.email || (isCurrentUser ? currentUser.email : "");
-      const userPhone =
-        row.userPhone || row.phone || (isCurrentUser ? currentUser.phone : "");
+      const userIdNumber =
+        row.userIdNumber || row.idNumber || (isCurrentUser ? currentUser.idNumber : "");
 
       appointments.push({
         id: row.id,
@@ -160,8 +158,7 @@ async function loadUserAppointments() {
         time: row.time,
         userId: row.user_id,
         userName,
-        userEmail,
-        userPhone,
+        userIdNumber,
         userNote: row.user_note || "",
         status: row.status,
       });
@@ -876,20 +873,14 @@ function openAppointmentDetailsModal(appointment) {
   const pUser = document.createElement("p");
   pUser.innerHTML = `<strong>Nombre completo:</strong> ${appointment.userName}`;
 
-  const pPhone = document.createElement("p");
-  pPhone.innerHTML = `<strong>Teléfono:</strong> ${
-    appointment.userPhone || "No registrado"
-  }`;
-
-  const pEmail = document.createElement("p");
-  pEmail.innerHTML = `<strong>Correo electrónico:</strong> ${
-    appointment.userEmail || "No registrado"
+  const pIdNumber = document.createElement("p");
+  pIdNumber.innerHTML = `<strong>Número de identificación:</strong> ${
+    appointment.userIdNumber || "No registrado"
   }`;
 
   body.appendChild(pDate);
   body.appendChild(pUser);
-  body.appendChild(pPhone);
-  body.appendChild(pEmail);
+  body.appendChild(pIdNumber);
 
   if (appointment.userNote && appointment.userNote.trim()) {
     const pNote = document.createElement("p");
@@ -934,150 +925,18 @@ function openProfileModal() {
   nameGroup.appendChild(nameLabel);
   nameGroup.appendChild(nameInput);
 
-  const emailGroup = document.createElement("div");
-  emailGroup.className = "auth-field-group";
-  const emailLabel = document.createElement("label");
-  emailLabel.textContent = "Correo electrónico";
-  const emailInput = document.createElement("input");
-  emailInput.type = "email";
-  emailInput.value = currentUser.email || "";
-  emailGroup.appendChild(emailLabel);
-  emailGroup.appendChild(emailInput);
-
-  const phoneGroup = document.createElement("div");
-  phoneGroup.className = "auth-field-group";
-  const phoneLabel = document.createElement("label");
-  phoneLabel.textContent = "Teléfono";
-  const phoneInput = document.createElement("input");
-  phoneInput.type = "tel";
-  phoneInput.value = currentUser.phone || "";
-  phoneGroup.appendChild(phoneLabel);
-  phoneGroup.appendChild(phoneInput);
+  const idNumberGroup = document.createElement("div");
+  idNumberGroup.className = "auth-field-group";
+  const idNumberLabel = document.createElement("label");
+  idNumberLabel.textContent = "Número de identificación";
+  const idNumberInput = document.createElement("input");
+  idNumberInput.type = "text";
+  idNumberInput.value = currentUser.idNumber || "";
+  idNumberGroup.appendChild(idNumberLabel);
+  idNumberGroup.appendChild(idNumberInput);
 
   form.appendChild(nameGroup);
-  form.appendChild(emailGroup);
-  form.appendChild(phoneGroup);
-
-  // Separador para cambio de contraseña
-  const separator = document.createElement("hr");
-  separator.style.margin = "1.5rem 0";
-  separator.style.border = "none";
-  separator.style.borderTop = "1px solid rgba(148, 163, 184, 0.3)";
-  form.appendChild(separator);
-
-  // Sección de cambio de contraseña
-  const passwordSection = document.createElement("div");
-  passwordSection.style.marginTop = "1rem";
-
-  const passwordTitle = document.createElement("h3");
-  passwordTitle.textContent = "Cambiar contraseña";
-  passwordTitle.style.fontSize = "1rem";
-  passwordTitle.style.fontWeight = "600";
-  passwordTitle.style.marginBottom = "1rem";
-  passwordTitle.style.color = "#0f172a";
-  passwordSection.appendChild(passwordTitle);
-
-  const currentPasswordGroup = document.createElement("div");
-  currentPasswordGroup.className = "auth-field-group";
-  const currentPasswordLabel = document.createElement("label");
-  currentPasswordLabel.textContent = "Contraseña actual";
-  const currentPasswordWrapper = document.createElement("div");
-  currentPasswordWrapper.className = "password-input-wrapper";
-  const currentPasswordInput = document.createElement("input");
-  currentPasswordInput.type = "password";
-  currentPasswordInput.id = "profile-current-password";
-  currentPasswordInput.placeholder = "Ingresa tu contraseña actual";
-  const currentPasswordToggle = document.createElement("button");
-  currentPasswordToggle.type = "button";
-  currentPasswordToggle.className = "password-toggle";
-  currentPasswordToggle.innerHTML = `<svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-    <circle cx="12" cy="12" r="3"></circle>
-  </svg>
-  <svg class="password-toggle-icon password-toggle-icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-    <line x1="1" y1="1" x2="23" y2="23"></line>
-  </svg>`;
-  currentPasswordWrapper.appendChild(currentPasswordInput);
-  currentPasswordWrapper.appendChild(currentPasswordToggle);
-  currentPasswordGroup.appendChild(currentPasswordLabel);
-  currentPasswordGroup.appendChild(currentPasswordWrapper);
-  setupPasswordToggle("profile-current-password", currentPasswordToggle);
-
-  const newPasswordGroup = document.createElement("div");
-  newPasswordGroup.className = "auth-field-group";
-  const newPasswordLabel = document.createElement("label");
-  newPasswordLabel.textContent = "Nueva contraseña";
-  const newPasswordWrapper = document.createElement("div");
-  newPasswordWrapper.className = "password-input-wrapper";
-  const newPasswordInput = document.createElement("input");
-  newPasswordInput.type = "password";
-  newPasswordInput.id = "profile-new-password";
-  newPasswordInput.placeholder = "Mínimo 6 caracteres";
-  const newPasswordToggle = document.createElement("button");
-  newPasswordToggle.type = "button";
-  newPasswordToggle.className = "password-toggle";
-  newPasswordToggle.innerHTML = `<svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-    <circle cx="12" cy="12" r="3"></circle>
-  </svg>
-  <svg class="password-toggle-icon password-toggle-icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-    <line x1="1" y1="1" x2="23" y2="23"></line>
-  </svg>`;
-  newPasswordWrapper.appendChild(newPasswordInput);
-  newPasswordWrapper.appendChild(newPasswordToggle);
-  newPasswordGroup.appendChild(newPasswordLabel);
-  newPasswordGroup.appendChild(newPasswordWrapper);
-  setupPasswordToggle("profile-new-password", newPasswordToggle);
-
-  const confirmPasswordGroup = document.createElement("div");
-  confirmPasswordGroup.className = "auth-field-group";
-  const confirmPasswordLabel = document.createElement("label");
-  confirmPasswordLabel.textContent = "Confirmar nueva contraseña";
-  const confirmPasswordWrapper = document.createElement("div");
-  confirmPasswordWrapper.className = "password-input-wrapper";
-  const confirmPasswordInput = document.createElement("input");
-  confirmPasswordInput.type = "password";
-  confirmPasswordInput.id = "profile-confirm-password";
-  confirmPasswordInput.placeholder = "Repite la nueva contraseña";
-  const confirmPasswordToggle = document.createElement("button");
-  confirmPasswordToggle.type = "button";
-  confirmPasswordToggle.className = "password-toggle";
-  confirmPasswordToggle.innerHTML = `<svg class="password-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-    <circle cx="12" cy="12" r="3"></circle>
-  </svg>
-  <svg class="password-toggle-icon password-toggle-icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-    <line x1="1" y1="1" x2="23" y2="23"></line>
-  </svg>`;
-  confirmPasswordWrapper.appendChild(confirmPasswordInput);
-  confirmPasswordWrapper.appendChild(confirmPasswordToggle);
-  confirmPasswordGroup.appendChild(confirmPasswordLabel);
-  confirmPasswordGroup.appendChild(confirmPasswordWrapper);
-  setupPasswordToggle("profile-confirm-password", confirmPasswordToggle);
-
-  const changePasswordBtn = document.createElement("button");
-  changePasswordBtn.type = "button";
-  changePasswordBtn.className = "btn";
-  changePasswordBtn.style.background = "#3b82f6";
-  changePasswordBtn.style.color = "#ffffff";
-  changePasswordBtn.style.marginTop = "0.5rem";
-  changePasswordBtn.textContent = "Cambiar contraseña";
-  changePasswordBtn.addEventListener("click", () => {
-    const currentPassword = currentPasswordInput.value.trim();
-    const newPassword = newPasswordInput.value.trim();
-    const confirmPassword = confirmPasswordInput.value.trim();
-    changeUserPassword(currentPassword, newPassword, confirmPassword);
-  });
-
-  passwordSection.appendChild(currentPasswordGroup);
-  passwordSection.appendChild(newPasswordGroup);
-  passwordSection.appendChild(confirmPasswordGroup);
-  passwordSection.appendChild(changePasswordBtn);
-
-  form.appendChild(passwordSection);
+  form.appendChild(idNumberGroup);
 
   const actions = document.createElement("div");
   actions.className = "modal-actions";
@@ -1092,9 +951,8 @@ function openProfileModal() {
   saveBtn.textContent = "Guardar cambios";
   saveBtn.addEventListener("click", () => {
     const newName = nameInput.value.trim();
-    const newEmail = emailInput.value.trim();
-    const newPhone = phoneInput.value.trim();
-    updateUserProfile(newName, newEmail, newPhone);
+    const newIdNumber = idNumberInput.value.trim();
+    updateUserProfile(newName, newIdNumber);
   });
 
   actions.appendChild(cancelBtn);
@@ -1106,68 +964,10 @@ function openProfileModal() {
   backdrop.classList.remove("hidden");
 }
 
-async function changeUserPassword(currentPassword, newPassword, confirmPassword) {
+async function updateUserProfile(name, idNumber) {
   if (!currentUser) return;
-
-  if (!currentPassword || !newPassword || !confirmPassword) {
-    showToast("Todos los campos de contraseña son obligatorios.", "error");
-    return;
-  }
-
-  if (newPassword.length < 6) {
-    showToast("La nueva contraseña debe tener al menos 6 caracteres.", "error");
-    return;
-  }
-
-  if (newPassword !== confirmPassword) {
-    showToast("Las contraseñas nuevas no coinciden.", "error");
-    return;
-  }
-
-  if (currentPassword === newPassword) {
-    showToast("La nueva contraseña debe ser diferente a la actual.", "error");
-    return;
-  }
-
-  try {
-    showLoader();
-    const res = await fetch(`${API_BASE}/users/${currentUser.id}/password`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        currentPassword,
-        newPassword,
-      }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      showToast(data.error || "No se pudo cambiar la contraseña.", "error");
-      return;
-    }
-
-    showToast("Contraseña actualizada correctamente.", "success");
-    
-    // Limpiar los campos de contraseña
-    const currentPasswordInput = document.getElementById("profile-current-password");
-    const newPasswordInput = document.getElementById("profile-new-password");
-    const confirmPasswordInput = document.getElementById("profile-confirm-password");
-    
-    if (currentPasswordInput) currentPasswordInput.value = "";
-    if (newPasswordInput) newPasswordInput.value = "";
-    if (confirmPasswordInput) confirmPasswordInput.value = "";
-  } catch (err) {
-    console.error(err);
-    showToast("Ocurrió un error al cambiar la contraseña.", "error");
-  } finally {
-    hideLoader();
-  }
-}
-
-async function updateUserProfile(name, email, phone) {
-  if (!currentUser) return;
-  if (!name || !email || !phone) {
-    showToast("Nombre, correo y teléfono son obligatorios.", "error");
+  if (!name || !idNumber) {
+    showToast("Nombre completo y número de identificación son obligatorios.", "error");
     return;
   }
 
@@ -1176,7 +976,7 @@ async function updateUserProfile(name, email, phone) {
     const res = await fetch(`${API_BASE}/users/${currentUser.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, phone }),
+      body: JSON.stringify({ name, idNumber }),
     });
 
     const data = await res.json();
@@ -1188,13 +988,12 @@ async function updateUserProfile(name, email, phone) {
     currentUser = {
       ...currentUser,
       name: data.name,
-      email: data.email,
-      phone: data.phone,
+      idNumber: data.idNumber,
     };
     localStorage.setItem("psico_user", JSON.stringify(currentUser));
     updateUserDisplay();
 
-    // Recargar citas para reflejar nombre/teléfono actualizados
+    // Recargar citas para reflejar nombre actualizado
     await loadUserAppointments();
     renderPatientAppointments();
     renderAdminAppointments();
@@ -1763,8 +1562,8 @@ function setupAuthUI() {
 
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const email = document.getElementById("login-email").value;
-    const password = document.getElementById("login-password").value;
+    const name = document.getElementById("login-name").value.trim();
+    const idNumber = document.getElementById("login-id-number").value.trim();
     const privacyCheckbox = document.getElementById("login-privacy");
 
     // Validar checkbox de privacidad
@@ -1773,12 +1572,17 @@ function setupAuthUI() {
       return;
     }
 
+    if (!name || !idNumber) {
+      showToast("Nombre completo y número de identificación son obligatorios.", "error");
+      return;
+    }
+
     try {
       showLoader();
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, idNumber }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -1803,8 +1607,6 @@ function setupAuthUI() {
     });
   }
 
-  // Configurar botones de mostrar/ocultar contraseña
-  setupPasswordToggle("login-password", "login-password-toggle");
 }
 
 function setupPasswordToggle(passwordInputId, toggleButton) {
@@ -1876,7 +1678,7 @@ function updateUserDisplay() {
     return;
   }
 
-  el.textContent = currentUser.name || currentUser.email || "Usuario";
+  el.textContent = currentUser.name || "Usuario";
   el.classList.remove("hidden");
 }
 
@@ -2057,8 +1859,7 @@ function renderUsersList() {
     const userInfo = document.createElement("div");
     userInfo.innerHTML = `
       <div style="font-weight: 600; margin-bottom: 0.25rem;">${user.name}</div>
-      <div style="font-size: 0.85rem; color: #6b7280;">${user.email}</div>
-      <div style="font-size: 0.85rem; color: #6b7280;">${user.phone}</div>
+      <div style="font-size: 0.85rem; color: #6b7280;">ID: ${user.idNumber || "No registrado"}</div>
     `;
 
     const deleteBtn = document.createElement("button");
@@ -2094,32 +1895,15 @@ function openAddUserModal() {
     <input type="text" id="new-user-name" required />
   `;
 
-  const emailGroup = document.createElement("div");
-  emailGroup.className = "auth-field-group";
-  emailGroup.innerHTML = `
-    <label>Correo electrónico</label>
-    <input type="email" id="new-user-email" required />
-  `;
-
-  const phoneGroup = document.createElement("div");
-  phoneGroup.className = "auth-field-group";
-  phoneGroup.innerHTML = `
-    <label>Teléfono</label>
-    <input type="tel" id="new-user-phone" required />
-  `;
-
-  const passwordGroup = document.createElement("div");
-  passwordGroup.className = "auth-field-group";
-  passwordGroup.innerHTML = `
-    <label>Contraseña</label>
-    <input type="password" id="new-user-password" required minlength="6" />
-    <small style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; display: block;">Mínimo 6 caracteres</small>
+  const idNumberGroup = document.createElement("div");
+  idNumberGroup.className = "auth-field-group";
+  idNumberGroup.innerHTML = `
+    <label>Número de identificación</label>
+    <input type="text" id="new-user-id-number" required />
   `;
 
   form.appendChild(nameGroup);
-  form.appendChild(emailGroup);
-  form.appendChild(phoneGroup);
-  form.appendChild(passwordGroup);
+  form.appendChild(idNumberGroup);
 
   const actions = document.createElement("div");
   actions.className = "modal-actions";
@@ -2134,21 +1918,14 @@ function openAddUserModal() {
   saveBtn.textContent = "Crear usuario";
   saveBtn.addEventListener("click", async () => {
     const name = document.getElementById("new-user-name").value.trim();
-    const email = document.getElementById("new-user-email").value.trim();
-    const phone = document.getElementById("new-user-phone").value.trim();
-    const password = document.getElementById("new-user-password").value;
+    const idNumber = document.getElementById("new-user-id-number").value.trim();
 
-    if (!name || !email || !phone || !password) {
-      showToast("Todos los campos son obligatorios.", "error");
+    if (!name || !idNumber) {
+      showToast("Nombre completo y número de identificación son obligatorios.", "error");
       return;
     }
 
-    if (password.length < 6) {
-      showToast("La contraseña debe tener al menos 6 caracteres.", "error");
-      return;
-    }
-
-    await createUser(name, email, phone, password);
+    await createUser(name, idNumber);
   });
 
   actions.appendChild(cancelBtn);
@@ -2158,13 +1935,13 @@ function openAddUserModal() {
   body.appendChild(actions);
 }
 
-async function createUser(name, email, phone, password) {
+async function createUser(name, idNumber) {
   try {
     showLoader();
     const res = await fetch(`${API_BASE}/users`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, phone, password }),
+      body: JSON.stringify({ name, idNumber }),
     });
 
     const data = await res.json();
