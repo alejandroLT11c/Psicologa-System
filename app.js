@@ -452,33 +452,28 @@ function renderCalendar() {
       // Es lunes-viernes, calcular la columna correcta
       // Lunes (1) -> columna 0, Martes (2) -> columna 1, Miércoles (3) -> columna 2, Jueves (4) -> columna 3, Viernes (5) -> columna 4
       firstWorkdayColumn = dayOfWeek - 1;
-      console.log(`Primer día laborable: día ${day}, día de semana ${dayOfWeek}, columna ${firstWorkdayColumn}`);
       break;
     }
   }
 
-  // Agregar celdas vacías hasta el primer día laborable para mantener el grid cuadriculado
+  // Agregar celdas vacías hasta el primer día laborable para mantener el grid de 5 columnas
   if (firstWorkdayColumn >= 0) {
-    console.log(`Agregando ${firstWorkdayColumn} celdas vacías`);
     for (let i = 0; i < firstWorkdayColumn; i++) {
       const emptyCell = document.createElement("div");
       emptyCell.className = "calendar-cell empty";
       grid.appendChild(emptyCell);
     }
-  } else {
-    console.log("No se encontró ningún día laborable en el mes");
   }
 
-  // Renderizar solo días laborables (Lunes a Viernes) en orden continuo
-  // Sin dejar espacios vacíos donde estarían los fines de semana
+  // Renderizar solo días laborables (Lunes a Viernes)
+  // El grid CSS automáticamente creará filas de 5 columnas
   for (let day = 1; day <= daysInMonth; day++) {
     const cellDate = new Date(year, month, day);
     const dayOfWeek = cellDate.getDay(); // 0 = Domingo, 6 = Sábado
     
     // Ocultar completamente sábados (6) y domingos (0) - NO RENDERIZARLOS
-    // Esto crea un calendario continuo sin espacios vacíos
     if (dayOfWeek === 0 || dayOfWeek === 6) {
-      continue; // Saltar completamente los fines de semana (no dejar espacio vacío)
+      continue; // Saltar completamente los fines de semana
     }
     
     const iso = toISODate(cellDate);

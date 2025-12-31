@@ -791,7 +791,7 @@ body.dark-theme .auth-helper {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(5, 1fr); /* Solo 5 columnas: L, M, X, J, V */
   gap: 0.4rem;
   align-items: stretch;
   justify-items: stretch;
