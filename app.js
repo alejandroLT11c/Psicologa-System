@@ -442,22 +442,23 @@ function renderCalendar() {
   const today = new Date();
 
   // Encontrar el primer día laborable del mes (Lunes a Viernes)
-  let firstWorkday = null;
-  let firstWorkdayWeekday = -1;
+  // y calcular en qué columna debe aparecer (0=L, 1=M, 2=X, 3=J, 4=V)
+  let firstWorkdayColumn = -1;
   for (let day = 1; day <= daysInMonth; day++) {
     const testDate = new Date(year, month, day);
-    const dayOfWeek = testDate.getDay();
+    const dayOfWeek = testDate.getDay(); // 0=Domingo, 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado
+    
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      // Es lunes-viernes, este es el primer día laborable
-      firstWorkday = day;
-      firstWorkdayWeekday = (dayOfWeek + 6) % 7; // Convertir a Lunes=0, Viernes=4
+      // Es lunes-viernes, calcular la columna correcta
+      // Lunes (1) -> columna 0, Martes (2) -> columna 1, Miércoles (3) -> columna 2, Jueves (4) -> columna 3, Viernes (5) -> columna 4
+      firstWorkdayColumn = dayOfWeek - 1;
       break;
     }
   }
 
-  // Agregar celdas vacías hasta el primer día laborable
-  if (firstWorkdayWeekday >= 0) {
-    for (let i = 0; i < firstWorkdayWeekday; i++) {
+  // Agregar celdas vacías hasta el primer día laborable para mantener el grid cuadriculado
+  if (firstWorkdayColumn >= 0) {
+    for (let i = 0; i < firstWorkdayColumn; i++) {
       const emptyCell = document.createElement("div");
       emptyCell.className = "calendar-cell empty";
       grid.appendChild(emptyCell);
