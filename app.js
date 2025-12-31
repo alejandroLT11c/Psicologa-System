@@ -272,16 +272,34 @@ async function scheduleAppointment(isoDate, time, user, userNote) {
       return;
     }
 
+    // Recargar todas las citas y notificaciones
     await Promise.all([loadUserAppointments(), loadNotifications()]);
-    renderCalendar();
-    renderPatientAppointments();
-    renderPatientTimeSlots();
-    renderPatientNotifications();
-    // Si hay un admin logueado, también renderizar sus citas y notificaciones
+    
+    // Si el admin está logueado, seleccionar el día de la cita para que pueda verla
     if (currentUser && currentUser.role === "admin") {
+      selectedDate = fromISODate(isoDate);
+      const label = document.getElementById("admin-selected-day-text");
+      if (label) label.textContent = formatDateLong(selectedDate);
+      updateToggleDayButton();
+      await loadDisabledHoursForDate(isoDate);
+    }
+    
+    // Renderizar calendario primero para que muestre el corazón amarillo
+    renderCalendar();
+    
+    // Renderizar paneles según el rol
+    if (currentUser && currentUser.role === "admin") {
+      // Si es admin, renderizar sus paneles
       renderAdminAppointments();
       renderAdminNotifications();
+      renderAdminTimeSlots();
+    } else {
+      // Si es paciente, renderizar sus paneles
+      renderPatientAppointments();
+      renderPatientTimeSlots();
+      renderPatientNotifications();
     }
+    
     showToast("Tu cita se creó y está en revisión de la psicóloga.", "success");
   } catch (err) {
     console.error(err);
@@ -402,7 +420,8 @@ function renderCalendar() {
   });
   monthLabel.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
 
-  const dayNames = ["L", "M", "X", "J", "V", "S", "D"];
+  // Solo mostrar días laborables (Lunes a Viernes)
+  const dayNames = ["L", "M", "X", "J", "V"];
   dayNames.forEach((d) => {
     const div = document.createElement("div");
     div.className = "calendar-day-name";
@@ -415,7 +434,18 @@ function renderCalendar() {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
 
-  for (let i = 0; i < firstDayWeekday; i++) {
+  // Calcular cuántas celdas vacías necesitamos (solo para días laborables)
+  // Si el primer día del mes es sábado (5) o domingo (6), ajustamos
+  let emptyCells = 0;
+  if (firstDayWeekday < 5) {
+    // Si el primer día es lunes-viernes, solo necesitamos celdas vacías hasta ese día
+    emptyCells = firstDayWeekday;
+  } else {
+    // Si el primer día es sábado o domingo, no necesitamos celdas vacías
+    emptyCells = 0;
+  }
+
+  for (let i = 0; i < emptyCells; i++) {
     const emptyCell = document.createElement("div");
     emptyCell.className = "calendar-cell empty";
     grid.appendChild(emptyCell);
@@ -426,8 +456,11 @@ function renderCalendar() {
     const iso = toISODate(cellDate);
     const dayOfWeek = cellDate.getDay(); // 0 = Domingo, 6 = Sábado
     
-    // Deshabilitar sábados (6) y domingos (0)
+    // Ocultar completamente sábados (6) y domingos (0) - no renderizarlos
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    if (isWeekend) {
+      continue; // Saltar completamente los fines de semana
+    }
     
     const cell = document.createElement("div");
     cell.className = "calendar-cell calendar-heart";
@@ -438,7 +471,7 @@ function renderCalendar() {
     if (isPastDay(cellDate)) {
       cell.classList.add("past");
     }
-    if (disabledDays.has(iso) || isWeekend) {
+    if (disabledDays.has(iso)) {
       cell.classList.add("disabled");
     }
 
