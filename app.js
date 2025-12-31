@@ -438,26 +438,26 @@ function renderCalendar() {
     grid.appendChild(div);
   });
 
-  const firstDayOfMonth = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
 
-  // Calcular cuántas celdas vacías necesitamos (solo para días laborables L-V)
-  // Necesitamos encontrar el primer día laborable del mes
-  let firstWeekday = -1;
+  // Encontrar el primer día laborable del mes (Lunes a Viernes)
+  let firstWorkday = null;
+  let firstWorkdayWeekday = -1;
   for (let day = 1; day <= daysInMonth; day++) {
     const testDate = new Date(year, month, day);
     const dayOfWeek = testDate.getDay();
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      // Es lunes-viernes
-      firstWeekday = (dayOfWeek + 6) % 7; // Convertir a Lunes=0
+      // Es lunes-viernes, este es el primer día laborable
+      firstWorkday = day;
+      firstWorkdayWeekday = (dayOfWeek + 6) % 7; // Convertir a Lunes=0, Viernes=4
       break;
     }
   }
 
-  // Si encontramos un día laborable, agregar celdas vacías hasta ese día
-  if (firstWeekday >= 0) {
-    for (let i = 0; i < firstWeekday; i++) {
+  // Agregar celdas vacías hasta el primer día laborable
+  if (firstWorkdayWeekday >= 0) {
+    for (let i = 0; i < firstWorkdayWeekday; i++) {
       const emptyCell = document.createElement("div");
       emptyCell.className = "calendar-cell empty";
       grid.appendChild(emptyCell);
