@@ -859,8 +859,8 @@ ESTILOS DE CORAZONES (Actualizado)
   top: 50%;
   left: 50%;
   /* TAMAÑO GRANDE PARA PC */
-  width: 64px; /* Antes 48px */
-  height: 64px; /* Antes 48px */
+  width: 72px; /* Aumentado de 64px */
+  height: 72px; /* Aumentado de 64px */
   background-color: #ffc0cb; /* Rosa claro por defecto */
   /* SVG Geométrico (Material Design) */
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' fill='black'/%3E%3C/svg%3E");
@@ -1822,8 +1822,8 @@ body.dark-theme #welcome-admin {
 
   /* Forzamos el tamaño pequeño en celulares */
   .calendar-heart::before {
-    width: 42px !important;
-    height: 42px !important;
+    width: 48px !important; /* Aumentado de 42px */
+    height: 48px !important; /* Aumentado de 42px */
   }
 
   .calendar-heart .day-number {

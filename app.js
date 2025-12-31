@@ -159,6 +159,7 @@ async function loadUserAppointments() {
         userId: row.user_id,
         userName,
         userIdNumber,
+        userPhone: row.userPhone || row.user_phone || "", // Agregar teléfono
         userNote: row.user_note || "",
         status: row.status,
       });
