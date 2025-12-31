@@ -272,10 +272,16 @@ async function scheduleAppointment(isoDate, time, user, userNote) {
       return;
     }
 
-    await loadUserAppointments();
+    await Promise.all([loadUserAppointments(), loadNotifications()]);
     renderCalendar();
     renderPatientAppointments();
     renderPatientTimeSlots();
+    renderPatientNotifications();
+    // Si hay un admin logueado, también renderizar sus citas y notificaciones
+    if (currentUser && currentUser.role === "admin") {
+      renderAdminAppointments();
+      renderAdminNotifications();
+    }
     showToast("Tu cita se creó y está en revisión de la psicóloga.", "success");
   } catch (err) {
     console.error(err);

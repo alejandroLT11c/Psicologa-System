@@ -542,6 +542,33 @@ body.dark-theme .auth-helper {
   padding: 0 1.25rem 2rem;
 }
 
+/* Para pantallas muy grandes (Mac, monitores 4K, etc.) */
+@media (min-width: 1920px) {
+  .main {
+    max-width: 90%;
+    padding: 0 2rem 2rem;
+  }
+  
+  .avatar-circle {
+    width: 80px;
+    height: 80px;
+    font-size: 2.2rem;
+  }
+}
+
+@media (min-width: 2560px) {
+  .main {
+    max-width: 85%;
+    padding: 0 3rem 2rem;
+  }
+  
+  .avatar-circle {
+    width: 88px;
+    height: 88px;
+    font-size: 2.4rem;
+  }
+}
+
 .welcome-section {
   background: linear-gradient(120deg, #009846 0%, #00c27a 35%, #3f8efc 75%, #8e44ad 100%);
   border-radius: 22px;

@@ -443,7 +443,17 @@ app.post("/api/appointments", async (req, res) => {
     const rows = await runQuery("SELECT * FROM appointments WHERE id = ?", [
       result.id,
     ]);
-    res.status(201).json(rows[0]);
+    const newAppointment = rows[0];
+
+    // Crear notificación para la administradora (id=2) cuando se crea una cita pendiente
+    if (newAppointment) {
+      const user = await runQuery("SELECT name FROM users WHERE id = ?", [userId]);
+      const userName = user.length > 0 ? user[0].name : "Un paciente";
+      const message = `${userName} ha solicitado una cita para el ${newAppointment.date} a las ${newAppointment.time}.`;
+      await createNotification(2, "nueva-cita", message);
+    }
+
+    res.status(201).json(newAppointment);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al crear la cita" });
