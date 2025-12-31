@@ -1952,7 +1952,6 @@ function renderUsersList() {
     const userInfo = document.createElement("div");
     userInfo.innerHTML = `
       <div style="font-weight: 600; margin-bottom: 0.25rem;">${user.name}</div>
-      <div style="font-size: 0.85rem; color: #6b7280;">ID: ${user.idNumber || "No registrado"}</div>
       <div style="font-size: 0.85rem; color: #6b7280;">Tel: ${user.phone || "No registrado"}</div>
     `;
 
