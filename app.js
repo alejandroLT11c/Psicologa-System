@@ -139,6 +139,7 @@ async function loadUserAppointments() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Error al cargar citas");
 
+    console.log("Cargando citas, respuesta del servidor:", data);
     appointments.length = 0;
     data.forEach((row) => {
       // Ocultar completamente el usuario de ejemplo (id = 1) para todos
@@ -163,8 +164,9 @@ async function loadUserAppointments() {
         status: row.status,
       });
     });
+    console.log("Citas cargadas en el array:", appointments);
   } catch (err) {
-    console.error(err);
+    console.error("Error al cargar citas:", err);
   }
 }
 
@@ -272,8 +274,15 @@ async function scheduleAppointment(isoDate, time, user, userNote) {
       return;
     }
 
+    console.log("Cita creada exitosamente:", data);
+    
     // Recargar todas las citas y notificaciones
     await Promise.all([loadUserAppointments(), loadNotifications()]);
+    
+    console.log("Citas después de recargar:", appointments);
+    console.log("Buscando citas para el día:", isoDate);
+    const citasDelDia = getAppointmentsForDay(isoDate);
+    console.log("Citas encontradas para", isoDate, ":", citasDelDia);
     
     // Si el admin está logueado, seleccionar el día de la cita para que pueda verla
     if (currentUser && currentUser.role === "admin") {
@@ -430,37 +439,42 @@ function renderCalendar() {
   });
 
   const firstDayOfMonth = new Date(year, month, 1);
-  const firstDayWeekday = (firstDayOfMonth.getDay() + 6) % 7; // Lunes=0
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = new Date();
 
-  // Calcular cuántas celdas vacías necesitamos (solo para días laborables)
-  // Si el primer día del mes es sábado (5) o domingo (6), ajustamos
-  let emptyCells = 0;
-  if (firstDayWeekday < 5) {
-    // Si el primer día es lunes-viernes, solo necesitamos celdas vacías hasta ese día
-    emptyCells = firstDayWeekday;
-  } else {
-    // Si el primer día es sábado o domingo, no necesitamos celdas vacías
-    emptyCells = 0;
+  // Calcular cuántas celdas vacías necesitamos (solo para días laborables L-V)
+  // Necesitamos encontrar el primer día laborable del mes
+  let firstWeekday = -1;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const testDate = new Date(year, month, day);
+    const dayOfWeek = testDate.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      // Es lunes-viernes
+      firstWeekday = (dayOfWeek + 6) % 7; // Convertir a Lunes=0
+      break;
+    }
   }
 
-  for (let i = 0; i < emptyCells; i++) {
-    const emptyCell = document.createElement("div");
-    emptyCell.className = "calendar-cell empty";
-    grid.appendChild(emptyCell);
+  // Si encontramos un día laborable, agregar celdas vacías hasta ese día
+  if (firstWeekday >= 0) {
+    for (let i = 0; i < firstWeekday; i++) {
+      const emptyCell = document.createElement("div");
+      emptyCell.className = "calendar-cell empty";
+      grid.appendChild(emptyCell);
+    }
   }
 
+  // Renderizar solo días laborables (Lunes a Viernes)
   for (let day = 1; day <= daysInMonth; day++) {
     const cellDate = new Date(year, month, day);
-    const iso = toISODate(cellDate);
     const dayOfWeek = cellDate.getDay(); // 0 = Domingo, 6 = Sábado
     
-    // Ocultar completamente sábados (6) y domingos (0) - no renderizarlos
-    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
-    if (isWeekend) {
+    // Ocultar completamente sábados (6) y domingos (0) - NO RENDERIZARLOS
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
       continue; // Saltar completamente los fines de semana
     }
+    
+    const iso = toISODate(cellDate);
     
     const cell = document.createElement("div");
     cell.className = "calendar-cell calendar-heart";
@@ -487,16 +501,24 @@ function renderCalendar() {
         ? allApps
         : allApps.filter((a) => a.userId === currentUser.id);
     
+    // Debug: verificar citas
+    if (allApps.length > 0) {
+      console.log(`Día ${iso}: ${allApps.length} citas encontradas`, allApps);
+    }
+    
     // Si hay citas, determinar el color según el estado
     if (apps.length > 0) {
       const hasPending = apps.some((a) => a.status === "pending");
       const hasConfirmed = apps.some((a) => a.status === "confirmed");
       const hasCancelled = apps.some((a) => a.status === "cancelled" || a.status === "rejected");
       
+      console.log(`Día ${iso}: hasPending=${hasPending}, hasConfirmed=${hasConfirmed}, hasCancelled=${hasCancelled}`);
+      
       if (hasConfirmed) {
         cell.classList.add("heart-confirmed"); // Verde
       } else if (hasPending) {
         cell.classList.add("heart-pending"); // Amarillo
+        console.log(`Aplicando clase heart-pending al día ${iso}`);
       } else if (hasCancelled) {
         // Canceladas vuelven a blanco (sin clase adicional)
         cell.classList.remove("heart-pending", "heart-confirmed");
