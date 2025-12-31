@@ -139,7 +139,6 @@ async function loadUserAppointments() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Error al cargar citas");
 
-    console.log("Cargando citas, respuesta del servidor:", data);
     appointments.length = 0;
     data.forEach((row) => {
       // Ocultar completamente el usuario de ejemplo (id = 1) para todos
@@ -164,7 +163,6 @@ async function loadUserAppointments() {
         status: row.status,
       });
     });
-    console.log("Citas cargadas en el array:", appointments);
   } catch (err) {
     console.error("Error al cargar citas:", err);
   }
@@ -274,15 +272,8 @@ async function scheduleAppointment(isoDate, time, user, userNote) {
       return;
     }
 
-    console.log("Cita creada exitosamente:", data);
-    
     // Recargar todas las citas y notificaciones
     await Promise.all([loadUserAppointments(), loadNotifications()]);
-    
-    console.log("Citas después de recargar:", appointments);
-    console.log("Buscando citas para el día:", isoDate);
-    const citasDelDia = getAppointmentsForDay(isoDate);
-    console.log("Citas encontradas para", isoDate, ":", citasDelDia);
     
     // Si el admin está logueado, seleccionar el día de la cita para que pueda verla
     if (currentUser && currentUser.role === "admin") {
@@ -503,30 +494,22 @@ function renderCalendar() {
         ? allApps
         : allApps.filter((a) => a.userId === currentUser.id);
     
-    // Debug: verificar citas
-    if (allApps.length > 0) {
-      console.log(`Día ${iso}: ${allApps.length} citas encontradas`, allApps);
-    }
-    
     // Si hay citas, determinar el color según el estado
     if (apps.length > 0) {
       const hasPending = apps.some((a) => a.status === "pending");
       const hasConfirmed = apps.some((a) => a.status === "confirmed");
       const hasCancelled = apps.some((a) => a.status === "cancelled" || a.status === "rejected");
       
-      console.log(`Día ${iso}: hasPending=${hasPending}, hasConfirmed=${hasConfirmed}, hasCancelled=${hasCancelled}`);
-      
       if (hasConfirmed) {
         cell.classList.add("heart-confirmed"); // Verde
       } else if (hasPending) {
         cell.classList.add("heart-pending"); // Amarillo
-        console.log(`Aplicando clase heart-pending al día ${iso}`);
       } else if (hasCancelled) {
-        // Canceladas vuelven a blanco (sin clase adicional)
+        // Canceladas vuelven a rosa claro (sin clase adicional)
         cell.classList.remove("heart-pending", "heart-confirmed");
       }
     } else {
-      // Sin citas = blanco (sin clases de color)
+      // Sin citas = rosa claro (sin clases de color)
       cell.classList.remove("heart-pending", "heart-confirmed");
     }
 
