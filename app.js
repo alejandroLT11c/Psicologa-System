@@ -1564,6 +1564,36 @@ async function init() {
   // Si no hay usuario autenticado, mostrar overlay y solo el calendario vacío
   showAuthOverlay();
   renderCalendar();
+
+  // Efecto líquido que sigue el cursor en los banners de bienvenida
+  setupLiquidCursorEffect();
+}
+
+// Efecto líquido que reacciona al cursor
+function setupLiquidCursorEffect() {
+  const welcomeSections = document.querySelectorAll('.welcome-section');
+  
+  welcomeSections.forEach(section => {
+    // Solo aplicar en dispositivos con cursor (no móviles)
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      section.addEventListener('mousemove', (e) => {
+        const rect = section.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        // Actualizar posición del efecto
+        section.style.setProperty('--cursor-x', `${x}px`);
+        section.style.setProperty('--cursor-y', `${y}px`);
+        
+        // Activar el efecto
+        section.classList.add('cursor-active');
+      });
+      
+      section.addEventListener('mouseleave', () => {
+        section.classList.remove('cursor-active');
+      });
+    }
+  });
 }
 
 function showAuthOverlay() {
