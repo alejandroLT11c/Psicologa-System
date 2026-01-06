@@ -3,9 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Sistema de agendamiento de citas psicológicas - Cooperativa Urbanos Pereira" />
+  <meta name="theme-color" content="#22c55e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Psicóloga App" />
   <title>Agendamiento Psicológico - Cooperativa Urbanos Pereira</title>
   <link rel="icon" type="image/png" href="cooperativa urbanos.png" />
   <link rel="apple-touch-icon" href="cooperativa urbanos.png" />
+  <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -237,6 +243,41 @@
   </div>
 
   <script src="app.js"></script>
+  <script>
+    // Registrar Service Worker para PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then((registration) => {
+            console.log('Service Worker registrado exitosamente:', registration.scope);
+          })
+          .catch((error) => {
+            console.log('Error al registrar Service Worker:', error);
+          });
+      });
+    }
+
+    // Detectar si la app está instalada y mostrar botón de instalación
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevenir el prompt automático
+      e.preventDefault();
+      // Guardar el evento para usarlo después
+      deferredPrompt = e;
+      // Mostrar botón de instalación personalizado (opcional)
+      console.log('La app se puede instalar');
+    });
+
+    // Función para instalar la app manualmente (opcional)
+    window.installApp = async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('Resultado de la instalación:', outcome);
+        deferredPrompt = null;
+      }
+    };
+  </script>
 </body>
 </html>
 
