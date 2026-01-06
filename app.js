@@ -1576,20 +1576,29 @@ function setupLiquidCursorEffect() {
   welcomeSections.forEach(section => {
     // Solo aplicar en dispositivos con cursor (no móviles)
     if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      let isActive = false;
+      
+      section.addEventListener('mouseenter', () => {
+        isActive = true;
+      });
+      
       section.addEventListener('mousemove', (e) => {
+        if (!isActive) return;
+        
         const rect = section.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         
-        // Actualizar posición del efecto
+        // Actualizar posición del efecto SOLO en la zona del cursor
         section.style.setProperty('--cursor-x', `${x}px`);
         section.style.setProperty('--cursor-y', `${y}px`);
         
-        // Activar el efecto
+        // Activar el efecto solo en esa zona
         section.classList.add('cursor-active');
       });
       
       section.addEventListener('mouseleave', () => {
+        isActive = false;
         section.classList.remove('cursor-active');
       });
     }
