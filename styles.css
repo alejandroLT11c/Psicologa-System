@@ -641,7 +641,7 @@ body.dark-theme .auth-helper {
   gap: 1.25rem;
   background: var(--white);
   border-radius: 16px;
-  padding: 1rem 1.25rem;
+  padding: 2.5rem 1.5rem;
   box-shadow: 0 8px 26px rgba(0, 0, 0, 0.12);
   border: 1px solid rgba(0, 0, 0, 0.03);
   position: relative;
@@ -656,15 +656,15 @@ body.dark-theme .auth-helper {
 }
 
 .avatar-circle {
-  width: 72px;
-  height: 72px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, var(--coop-yellow), var(--coop-green));
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--white);
-  font-size: 2rem;
+  font-size: 3.5rem;
   font-weight: 700;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   animation: floatAvatar 3s ease-in-out infinite;
@@ -1786,6 +1786,13 @@ body.dark-theme #welcome-admin {
   .profile-card {
     flex-direction: column;
     align-items: flex-start;
+    padding: 2rem 1.25rem;
+  }
+
+  .avatar-circle {
+    width: 100px;
+    height: 100px;
+    font-size: 3rem;
   }
 
   .panel-grid {
