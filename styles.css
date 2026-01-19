@@ -517,16 +517,39 @@ body.dark-theme .password-toggle:hover {
   color: #6b7280;
 }
 
+/* Media query para móviles */
 @media (max-width: 640px) {
+  html {
+    font-size: 16px; /* Base para móvil */
+  }
+
   .main {
     max-width: 100%;
     margin: 0.75rem auto 1.5rem;
-    padding: 0 0.4rem 1.5rem; /* menos margen lateral */
+    padding: 0 0.4rem 1.5rem;
+  }
+
+  .top-bar {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .logo {
+    width: 48px;
+    height: 48px;
+  }
+
+  .brand-text {
+    font-size: 0.65rem;
+  }
+
+  .coop-name {
+    font-size: 0.6rem;
+    line-height: 1.2;
   }
 
   .welcome-section {
     grid-template-columns: minmax(0, 1fr);
-    padding: 1rem 0.7rem; /* reduce aún más los lados para que el texto se acerque al borde */
+    padding: 1rem 0.7rem;
   }
 
   .hero-text {
@@ -534,26 +557,46 @@ body.dark-theme .password-toggle:hover {
   }
 
   .hero-title {
-    font-size: 1.9rem;
-    line-height: 1.15;
+    font-size: 1.5rem;
+    line-height: 1.2;
   }
 
   .welcome-section p {
-    font-size: 0.9rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
   }
 
   .auth-card {
     padding-inline: 1.1rem;
+    margin: 1rem;
   }
 
   .user-display {
     max-width: 100%;
     white-space: normal;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
   }
 
   /* En móvil ocultamos la columna de \"Agendar cita\"; el usuario agenda desde el modal */
   #panel-paciente .panel-col:first-child {
     display: none;
+  }
+
+  .modal {
+    width: 95%;
+    max-width: 95%;
+    margin: 1rem auto;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .modal-header {
+    padding: 1rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
   }
 }
 
@@ -2018,6 +2061,24 @@ body.dark-theme #welcome-admin {
   }
 }
 
+/* Media query para tablets */
+@media (max-width: 1024px) {
+  .main {
+    max-width: 95%;
+    padding: 0 1rem 2rem;
+  }
+
+  .calendar-layout {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .panel-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+}
+
 @media (max-width: 900px) {
   .calendar-layout {
     grid-template-columns: 1fr;
@@ -2027,6 +2088,7 @@ body.dark-theme #welcome-admin {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.35rem;
+    padding: 0.75rem 1rem;
   }
 
   .top-actions {
@@ -2037,6 +2099,14 @@ body.dark-theme #welcome-admin {
   .role-switch {
     align-self: stretch;
     justify-content: flex-start;
+  }
+
+  .brand-text {
+    font-size: 0.75rem;
+  }
+
+  .coop-name {
+    font-size: 0.7rem;
   }
 }
 
@@ -2142,6 +2212,71 @@ body.dark-theme #welcome-admin {
 
   .time-slot-btn {
     flex-basis: calc(50% - 0.4rem);
+    font-size: 0.85rem;
+    padding: 0.6rem 0.8rem;
+  }
+
+  /* Ajustes para el header en móvil */
+  .top-bar {
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Asegurar que los textos no se desborden */
+  .profile-info h2 {
+    font-size: 1.25rem;
+  }
+
+  .profile-info p {
+    font-size: 0.875rem;
+  }
+
+  /* Ajustes para botones en móvil */
+  .btn {
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+  }
+
+  /* Calendario más compacto en móvil */
+  .calendar-header {
+    padding: 0.5rem;
+  }
+
+  .month-label {
+    font-size: 1rem;
+  }
+
+  .calendar-legend {
+    font-size: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .calendar-legend span {
+    font-size: 0.7rem;
+  }
+}
+
+/* Media query para pantallas muy pequeñas */
+@media (max-width: 375px) {
+  html {
+    font-size: 14px;
+  }
+
+  .hero-title {
+    font-size: 1.25rem;
+  }
+
+  .welcome-section p {
+    font-size: 0.8rem;
+  }
+
+  .calendar-legend {
+    font-size: 0.65rem;
   }
 }
 
