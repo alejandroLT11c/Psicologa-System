@@ -1574,6 +1574,12 @@ function setupLiquidCursorEffect() {
   const welcomeSections = document.querySelectorAll('.welcome-section');
   
   welcomeSections.forEach(section => {
+    // Evitar agregar listeners múltiples veces
+    if (section.dataset.liquidEffectSetup === 'true') {
+      return;
+    }
+    section.dataset.liquidEffectSetup = 'true';
+    
     // Solo aplicar en dispositivos con cursor (no móviles)
     if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
       let isActive = false;
@@ -1668,6 +1674,9 @@ async function onUserAuthenticated(user, storage = "local") {
   } finally {
     hideLoader();
   }
+
+  // Inicializar el efecto líquido del cursor después de que la UI esté lista
+  setupLiquidCursorEffect();
 }
 
 function setupAuthUI() {
