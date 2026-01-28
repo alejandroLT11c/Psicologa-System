@@ -1111,7 +1111,11 @@ function openProfileModal() {
 
 // Función específica para editar perfil de la psicóloga (solo admin)
 function openPsychologistProfileModal() {
-  if (!isAdminMode || !currentUser || currentUser.role !== 'admin') return;
+  console.log("openPsychologistProfileModal llamado", { isAdminMode, currentUser });
+  if (!isAdminMode || !currentUser || currentUser.role !== 'admin') {
+    console.log("No se puede abrir: condiciones no cumplidas");
+    return;
+  }
 
   const backdrop = document.getElementById("modal-backdrop");
   const title = document.getElementById("modal-title");
@@ -1785,7 +1789,10 @@ async function init() {
   setupAuthUI();
 
   // Configurar evento para editar perfil de la psicóloga (solo en modo admin)
-  setupPsychologistProfileClick();
+  // Usar setTimeout para asegurar que el DOM esté completamente cargado
+  setTimeout(() => {
+    setupPsychologistProfileClick();
+  }, 500);
 
   if (isAdminMode) {
     // Modo admin: requiere login
@@ -1908,6 +1915,8 @@ function updatePsychologistDisplay() {
     const psychologistNameEl = document.getElementById("psychologist-name");
     if (psychologistNameEl) {
       psychologistNameEl.textContent = `Psicóloga ${currentUser.name}`;
+      // Reconfigurar el evento después de actualizar el texto
+      setupPsychologistProfileClick();
     }
     
     // Actualizar el teléfono en la sección de perfil
@@ -1954,25 +1963,51 @@ async function onUserAuthenticated(user, storage = "local") {
 
 function setupPsychologistProfileClick() {
   const psychologistNameEl = document.getElementById("psychologist-name");
-  if (!psychologistNameEl) return;
+  if (!psychologistNameEl) {
+    console.log("Elemento psychologist-name no encontrado, reintentando...");
+    // Si el elemento no existe aún, intentar de nuevo después de un breve delay
+    setTimeout(setupPsychologistProfileClick, 100);
+    return;
+  }
   
-  // Remover listeners anteriores si existen
-  const newEl = psychologistNameEl.cloneNode(true);
-  psychologistNameEl.parentNode.replaceChild(newEl, psychologistNameEl);
+  console.log("Configurando click en nombre de psicóloga", { isAdminMode, currentUser });
   
   // Solo hacer clickeable en modo admin cuando hay usuario autenticado
-  if (isAdminMode) {
-    newEl.style.cursor = 'pointer';
-    newEl.style.textDecoration = 'underline';
-    newEl.style.textDecorationStyle = 'dotted';
-    newEl.addEventListener("click", () => {
-      if (currentUser && currentUser.role === 'admin') {
-        openPsychologistProfileModal();
-      }
-    });
+  if (isAdminMode && currentUser && currentUser.role === 'admin') {
+    // Usar delegación de eventos en el contenedor padre para mayor robustez
+    const profileInfo = psychologistNameEl.closest('.profile-info');
+    if (profileInfo) {
+      // Remover listener anterior si existe
+      profileInfo.removeEventListener("click", handlePsychologistNameClick);
+      profileInfo.addEventListener("click", handlePsychologistNameClick);
+    }
+    
+    // Configurar estilos visuales
+    psychologistNameEl.style.cursor = 'pointer';
+    psychologistNameEl.style.textDecoration = 'underline';
+    psychologistNameEl.style.textDecorationStyle = 'dotted';
+    psychologistNameEl.title = 'Click para editar perfil';
+    
+    console.log("Evento configurado correctamente");
   } else {
-    newEl.style.cursor = 'default';
-    newEl.style.textDecoration = 'none';
+    psychologistNameEl.style.cursor = 'default';
+    psychologistNameEl.style.textDecoration = 'none';
+    psychologistNameEl.title = '';
+  }
+}
+
+// Handler separado para el click en el nombre de la psicóloga
+function handlePsychologistNameClick(e) {
+  const psychologistNameEl = document.getElementById("psychologist-name");
+  if (!psychologistNameEl) return;
+  
+  // Verificar que el click fue en el nombre o cerca de él
+  const clickedEl = e.target;
+  if (clickedEl.id === 'psychologist-name' || clickedEl.closest('#psychologist-name')) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log("Click en nombre de psicóloga detectado");
+    openPsychologistProfileModal();
   }
 }
 
