@@ -242,7 +242,52 @@ app.put("/api/users/:userId/password", async (req, res) => {
   }
 });
 
-// Login (pacientes y psicóloga)
+// Login admin simplificado (solo usuario y contraseña)
+app.post("/api/auth/admin-login", async (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ error: "Usuario y contraseña son obligatorios." });
+  }
+
+  try {
+    const users = await runQuery(
+      "SELECT id, name, id_number, phone, role, password_hash FROM users WHERE role = 'admin' AND name = ?",
+      [username.trim()]
+    );
+    const user = users[0];
+
+    if (!user) {
+      return res.status(401).json({ error: "Credenciales inválidas." });
+    }
+
+    // Si no tiene contraseña configurada, usar id_number como contraseña temporal
+    if (!user.password_hash) {
+      if (password !== user.id_number) {
+        return res.status(401).json({ error: "Credenciales inválidas." });
+      }
+    } else {
+      // Verificar contraseña con bcrypt
+      const isValid = await bcrypt.compare(password, user.password_hash);
+      if (!isValid) {
+        return res.status(401).json({ error: "Credenciales inválidas." });
+      }
+    }
+
+    res.json({
+      id: user.id,
+      name: user.name,
+      idNumber: user.id_number,
+      phone: user.phone,
+      role: user.role,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al iniciar sesión." });
+  }
+});
+
+// Login (pacientes y psicóloga) - DEPRECADO, solo para compatibilidad
 app.post("/api/auth/login", async (req, res) => {
   const { name, idNumber } = req.body;
 
@@ -334,21 +379,41 @@ app.get("/api/users/:userId/notifications", async (req, res) => {
 
 // Obtener citas por día
 app.get("/api/appointments", async (req, res) => {
-  const { date } = req.query;
+  const { date, deviceId } = req.query;
   if (!date) {
     return res.status(400).json({ error: "Falta el parámetro date (YYYY-MM-DD)" });
   }
   try {
-    const rows = await runQuery(
-      `
-      SELECT a.*, u.name as userName, u.id_number as userIdNumber, u.phone as userPhone
-      FROM appointments a
-      JOIN users u ON u.id = a.user_id
-      WHERE a.date = ?
-      ORDER BY a.time ASC
-    `,
-      [date]
-    );
+    let rows;
+    if (deviceId) {
+      // Para usuarios anónimos: obtener solo sus citas del día
+      rows = await runQuery(
+        `
+        SELECT a.*, 
+               COALESCE(a.patient_name, u.name) as userName,
+               COALESCE(a.patient_phone, u.phone) as userPhone
+        FROM appointments a
+        LEFT JOIN users u ON u.id = a.user_id
+        WHERE a.date = ? AND a.device_id = ?
+        ORDER BY a.time ASC
+      `,
+        [date, deviceId]
+      );
+    } else {
+      // Para admin: obtener todas las citas del día
+      rows = await runQuery(
+        `
+        SELECT a.*, 
+               COALESCE(a.patient_name, u.name) as userName,
+               COALESCE(a.patient_phone, u.phone) as userPhone
+        FROM appointments a
+        LEFT JOIN users u ON u.id = a.user_id
+        WHERE a.date = ?
+        ORDER BY a.time ASC
+      `,
+        [date]
+      );
+    }
     res.json(rows);
   } catch (err) {
     console.error(err);
@@ -361,9 +426,12 @@ app.get("/api/appointments-all", async (req, res) => {
   try {
     const rows = await runQuery(
       `
-      SELECT a.*, u.name AS userName, u.id_number AS userIdNumber, u.phone AS userPhone
+      SELECT a.*, 
+             COALESCE(a.patient_name, u.name) AS userName,
+             COALESCE(a.patient_phone, u.phone) AS userPhone,
+             u.id_number AS userIdNumber
       FROM appointments a
-      JOIN users u ON u.id = a.user_id
+      LEFT JOIN users u ON u.id = a.user_id
       ORDER BY a.date ASC, a.time ASC
     `
     );
@@ -374,13 +442,44 @@ app.get("/api/appointments-all", async (req, res) => {
   }
 });
 
+// Obtener citas por deviceId (para usuarios anónimos)
+app.get("/api/appointments-by-device", async (req, res) => {
+  const { deviceId } = req.query;
+  if (!deviceId) {
+    return res.status(400).json({ error: "Falta el parámetro deviceId" });
+  }
+  try {
+    const rows = await runQuery(
+      `
+      SELECT a.*
+      FROM appointments a
+      WHERE a.device_id = ?
+      ORDER BY a.date ASC, a.time ASC
+    `,
+      [deviceId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener citas del dispositivo" });
+  }
+});
+
 // Crear cita
 app.post("/api/appointments", async (req, res) => {
-  const { userId, date, time, userNote } = req.body;
-  if (!userId || !date || !time) {
-    return res
-      .status(400)
-      .json({ error: "userId, date y time son obligatorios para crear una cita" });
+  const { userId, deviceId, patientName, patientPhone, date, time, userNote } = req.body;
+  
+  // Validar campos obligatorios
+  if (!date || !time) {
+    return res.status(400).json({ error: "date y time son obligatorios para crear una cita" });
+  }
+  
+  // Para usuarios anónimos (vista de usuario), se requiere deviceId, patientName y patientPhone
+  // Para admin, se puede usar userId (opcional)
+  if (!userId && (!deviceId || !patientName || !patientPhone)) {
+    return res.status(400).json({ 
+      error: "Para usuarios anónimos se requiere deviceId, patientName y patientPhone" 
+    });
   }
 
   try {
@@ -401,14 +500,13 @@ app.post("/api/appointments", async (req, res) => {
       return res.status(400).json({ error: "Esa hora está deshabilitada" });
     }
 
-    // Evitar que dos usuarios (reales) tomen el mismo horario
+    // Evitar que dos usuarios tomen el mismo horario
     const existing = await runQuery(
       `
       SELECT id FROM appointments
       WHERE date = ?
         AND time = ?
         AND status IN ('pending', 'confirmed')
-        AND user_id <> 1 -- ignorar citas del usuario de ejemplo
     `,
       [date, time]
     );
@@ -416,28 +514,39 @@ app.post("/api/appointments", async (req, res) => {
       return res.status(400).json({ error: "Ese horario ya está ocupado" });
     }
 
-    // Evitar que un mismo usuario tenga más de una cita el mismo día
-    const existingSameDay = await runQuery(
-      `
-      SELECT id FROM appointments
-      WHERE date = ?
-        AND user_id = ?
-        AND status IN ('pending', 'confirmed')
-    `,
-      [date, userId]
-    );
-    if (existingSameDay.length > 0) {
-      return res.status(400).json({
-        error: "Ya tienes una cita para ese día. Cancela o modifica la existente antes de agendar otra.",
-      });
+    // Evitar que un mismo dispositivo tenga más de una cita el mismo día
+    if (deviceId) {
+      const existingSameDay = await runQuery(
+        `
+        SELECT id FROM appointments
+        WHERE date = ?
+          AND device_id = ?
+          AND status IN ('pending', 'confirmed')
+      `,
+        [date, deviceId]
+      );
+      if (existingSameDay.length > 0) {
+        return res.status(400).json({
+          error: "Ya tienes una cita para ese día. Cancela o modifica la existente antes de agendar otra.",
+        });
+      }
     }
 
+    // Insertar cita
     const result = await runExecute(
       `
-      INSERT INTO appointments (user_id, date, time, status, user_note)
-      VALUES (?, ?, ?, 'pending', ?)
+      INSERT INTO appointments (user_id, device_id, patient_name, patient_phone, date, time, status, user_note)
+      VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)
     `,
-      [userId, date, time, userNote || null]
+      [
+        userId || null,
+        deviceId || null,
+        patientName ? patientName.trim() : null,
+        patientPhone ? patientPhone.trim() : null,
+        date,
+        time,
+        userNote || null
+      ]
     );
 
     const rows = await runQuery("SELECT * FROM appointments WHERE id = ?", [
@@ -447,9 +556,8 @@ app.post("/api/appointments", async (req, res) => {
 
     // Crear notificación para la administradora (id=2) cuando se crea una cita pendiente
     if (newAppointment) {
-      const user = await runQuery("SELECT name FROM users WHERE id = ?", [userId]);
-      const userName = user.length > 0 ? user[0].name : "Un paciente";
-      const message = `${userName} ha solicitado una cita para el ${newAppointment.date} a las ${newAppointment.time}.`;
+      const patientNameDisplay = patientName || "Un paciente";
+      const message = `${patientNameDisplay} (${patientPhone || 'Sin teléfono'}) ha solicitado una cita para el ${newAppointment.date} a las ${newAppointment.time}.`;
       await createNotification(2, "nueva-cita", message);
     }
 

@@ -16,8 +16,24 @@ let currentRole = "paciente";
 let currentDate = new Date();
 let selectedDate = null; // Date o null
 
-// Usuario autenticado (se carga desde login / registro)
+// Detectar si es modo admin o usuario basado en parámetro URL
+const urlParams = new URLSearchParams(window.location.search);
+const isAdminMode = urlParams.get('admin') === 'true';
+
+// Usuario autenticado (solo para admin)
 let currentUser = null;
+
+// Device ID para usuarios anónimos (generado y guardado en localStorage)
+function getOrCreateDeviceId() {
+  let deviceId = localStorage.getItem('psico_device_id');
+  if (!deviceId) {
+    // Generar un ID único
+    deviceId = 'device_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('psico_device_id', deviceId);
+  }
+  return deviceId;
+}
+let deviceId = !isAdminMode ? getOrCreateDeviceId() : null;
 
 // Citas guardadas en memoria
 // { id, date: 'YYYY-MM-DD', time: 'HH:MM', userId, userName, status }
@@ -91,6 +107,8 @@ function getAppointmentsForDay(isoDate) {
 }
 
 function isTimeTaken(isoDate, time) {
+  // En modo usuario, mostrar como ocupado si CUALQUIERA tiene una cita (no solo el dispositivo)
+  // En modo admin, mostrar todas las citas
   return appointments.some(
     (a) =>
       a.date === isoDate &&
@@ -104,10 +122,10 @@ function isHourDisabled(isoDate, time) {
   return set ? set.has(time) : false;
 }
 
-function userHasAppointmentOnDay(isoDate, userId) {
+function userHasAppointmentOnDay(isoDate, userIdOrDeviceId) {
   return appointments.some(
     (a) =>
-      a.userId === userId &&
+      (a.userId === userIdOrDeviceId || a.deviceId === userIdOrDeviceId) &&
       a.date === isoDate &&
       (a.status === "pending" || a.status === "confirmed")
   );
@@ -133,9 +151,18 @@ function addNotification(userId, message, type) {
 }
 
 async function loadUserAppointments() {
-  if (!currentUser) return;
   try {
-    const res = await fetch(`${API_BASE}/appointments-all`);
+    let res;
+    if (isAdminMode && currentUser) {
+      // Modo admin: cargar todas las citas
+      res = await fetch(`${API_BASE}/appointments-all`);
+    } else if (!isAdminMode && deviceId) {
+      // Modo usuario: cargar solo citas del dispositivo
+      res = await fetch(`${API_BASE}/appointments-by-device?deviceId=${encodeURIComponent(deviceId)}`);
+    } else {
+      return; // No hay modo válido
+    }
+    
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Error al cargar citas");
 
@@ -146,26 +173,37 @@ async function loadUserAppointments() {
         return;
       }
 
-      const isCurrentUser = row.user_id === currentUser.id;
-      const userName =
-        row.userName || row.username || row.name || (isCurrentUser ? currentUser.name : "Paciente");
-      const userIdNumber =
-        row.userIdNumber || row.idNumber || (isCurrentUser ? currentUser.idNumber : "");
+      const userName = row.patient_name || row.userName || row.username || row.name || "Paciente";
+      const userPhone = row.patient_phone || row.userPhone || row.user_phone || "";
+      const userIdNumber = row.userIdNumber || row.idNumber || "";
 
       appointments.push({
         id: row.id,
         date: row.date,
         time: row.time,
-        userId: row.user_id,
+        userId: row.user_id || null,
+        deviceId: row.device_id || null,
         userName,
         userIdNumber,
-        userPhone: row.userPhone || row.user_phone || "", // Agregar teléfono
+        userPhone,
         userNote: row.user_note || "",
         status: row.status,
       });
     });
   } catch (err) {
     console.error("Error al cargar citas:", err);
+  }
+}
+
+// Función para cargar todos los datos necesarios según el modo
+async function loadAllData() {
+  await Promise.all([
+    loadDisabledDays(),
+    loadUserAppointments(),
+  ]);
+  // Las notificaciones solo se cargan en modo admin
+  if (isAdminMode && currentUser) {
+    await loadNotifications();
   }
 }
 
@@ -238,8 +276,19 @@ async function loadDisabledHoursForDate(isoDate) {
   }
 }
 
-async function scheduleAppointment(isoDate, time, user, userNote) {
-  if (userHasAppointmentOnDay(isoDate, user.id)) {
+async function scheduleAppointment(isoDate, time, user, userNote, patientName, patientPhone) {
+  // Validar según el modo
+  if (isAdminMode && !user) {
+    showToast("Debes iniciar sesión para agendar una cita.", "error");
+    return;
+  }
+  if (!isAdminMode && (!patientName || !patientPhone)) {
+    showToast("Nombre completo y número de celular son obligatorios.", "error");
+    return;
+  }
+
+  const userIdOrDeviceId = isAdminMode ? user.id : deviceId;
+  if (userHasAppointmentOnDay(isoDate, userIdOrDeviceId)) {
     showToast(
       "Ya tienes una cita para ese día. Cancela o modifica la existente antes de agendar otra.",
       "error"
@@ -257,15 +306,24 @@ async function scheduleAppointment(isoDate, time, user, userNote) {
 
   try {
     showLoader();
+    const body = {
+      date: isoDate,
+      time,
+      userNote: userNote || "",
+    };
+    
+    if (isAdminMode) {
+      body.userId = user.id;
+    } else {
+      body.deviceId = deviceId;
+      body.patientName = patientName.trim();
+      body.patientPhone = patientPhone.trim();
+    }
+    
     const res = await fetch(`${API_BASE}/appointments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: user.id,
-        date: isoDate,
-        time,
-        userNote: userNote || "",
-      }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -273,11 +331,16 @@ async function scheduleAppointment(isoDate, time, user, userNote) {
       return;
     }
 
-    // Recargar todas las citas y notificaciones
-    await Promise.all([loadUserAppointments(), loadNotifications()]);
+    // Recargar todas las citas
+    await loadUserAppointments();
+    
+    // Solo cargar notificaciones en modo admin
+    if (isAdminMode && currentUser) {
+      await loadNotifications();
+    }
     
     // Si el admin está logueado, seleccionar el día de la cita para que pueda verla
-    if (currentUser && currentUser.role === "admin") {
+    if (isAdminMode && currentUser && currentUser.role === "admin") {
       selectedDate = fromISODate(isoDate);
       const label = document.getElementById("admin-selected-day-text");
       if (label) label.textContent = formatDateLong(selectedDate);
@@ -288,17 +351,24 @@ async function scheduleAppointment(isoDate, time, user, userNote) {
     // Renderizar calendario primero para que muestre el corazón amarillo
     renderCalendar();
     
-    // Renderizar paneles según el rol
-    if (currentUser && currentUser.role === "admin") {
+    // Renderizar paneles según el modo
+    if (isAdminMode && currentUser && currentUser.role === "admin") {
       // Si es admin, renderizar sus paneles
       renderAdminAppointments();
       renderAdminNotifications();
       renderAdminTimeSlots();
     } else {
-      // Si es paciente, renderizar sus paneles
+      // Si es usuario, renderizar sus paneles
       renderPatientAppointments();
       renderPatientTimeSlots();
-      renderPatientNotifications();
+      if (!isAdminMode) {
+        // Las notificaciones no se muestran en modo usuario
+        const notiContainer = document.getElementById("patient-notifications");
+        if (notiContainer) {
+          notiContainer.innerHTML = "Aquí verás las novedades de tus citas.";
+          notiContainer.classList.add("empty");
+        }
+      }
     }
     
     showToast("Tu cita se creó y está en revisión de la psicóloga.", "success");
@@ -490,10 +560,16 @@ function renderCalendar() {
 
     // Determinar el estado de las citas para cambiar el color del corazón
     const allApps = getAppointmentsForDay(iso);
-    const apps =
-      currentRole === "admin" || !currentUser
-        ? allApps
-        : allApps.filter((a) => a.userId === currentUser.id);
+    let apps;
+    if (isAdminMode && currentUser && currentUser.role === "admin") {
+      // Modo admin: mostrar todas las citas
+      apps = allApps;
+    } else if (!isAdminMode && deviceId) {
+      // Modo usuario: mostrar solo citas del dispositivo
+      apps = allApps.filter((a) => a.deviceId === deviceId);
+    } else {
+      apps = [];
+    }
     
     // Si hay citas, determinar el color según el estado
     if (apps.length > 0) {
@@ -566,12 +642,16 @@ function renderPatientAppointments() {
   const container = document.getElementById("patient-appointments");
   if (!container) return;
 
-  const userId = currentUser ? currentUser.id : null;
-  const userApps = userId
-    ? appointments
-        .filter((a) => a.userId === userId)
-        .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time))
-    : [];
+  let userApps = [];
+  if (isAdminMode && currentUser) {
+    // Modo admin: no mostrar citas de paciente aquí
+    userApps = [];
+  } else if (!isAdminMode && deviceId) {
+    // Modo usuario: mostrar solo citas del dispositivo
+    userApps = appointments
+      .filter((a) => a.deviceId === deviceId)
+      .sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+  }
 
   container.innerHTML = "";
 
@@ -1265,14 +1345,60 @@ function openConfirmModal(isoDate, time) {
   cancelBtn.textContent = "Cancelar";
   cancelBtn.addEventListener("click", closeModal);
 
+  // En modo usuario, agregar campos de nombre y teléfono
+  let nameInput, phoneInput;
+  if (!isAdminMode) {
+    const nameGroup = document.createElement("div");
+    nameGroup.className = "auth-field-group";
+    const nameLabel = document.createElement("label");
+    nameLabel.textContent = "Nombre completo";
+    nameLabel.setAttribute("for", "appointment-name");
+    nameInput = document.createElement("input");
+    nameInput.id = "appointment-name";
+    nameInput.type = "text";
+    nameInput.required = true;
+    nameGroup.appendChild(nameLabel);
+    nameGroup.appendChild(nameInput);
+    body.insertBefore(nameGroup, noteLabel);
+
+    const phoneGroup = document.createElement("div");
+    phoneGroup.className = "auth-field-group";
+    const phoneLabel = document.createElement("label");
+    phoneLabel.textContent = "Número de celular";
+    phoneLabel.setAttribute("for", "appointment-phone");
+    phoneInput = document.createElement("input");
+    phoneInput.id = "appointment-phone";
+    phoneInput.type = "tel";
+    phoneInput.required = true;
+    phoneGroup.appendChild(phoneLabel);
+    phoneGroup.appendChild(phoneInput);
+    body.insertBefore(phoneGroup, nameGroup.nextSibling);
+  }
+
   const confirmBtn = document.createElement("button");
   confirmBtn.className = "btn btn-confirm";
   confirmBtn.textContent = "Confirmar cita";
   confirmBtn.addEventListener("click", () => {
-    if (!currentUser) {
+    if (isAdminMode && !currentUser) {
       alert("Debes iniciar sesión para agendar una cita.");
       return;
     }
+    
+    // Validar campos en modo usuario
+    if (!isAdminMode) {
+      const patientName = nameInput.value.trim();
+      const patientPhone = phoneInput.value.trim();
+      if (!patientName || !patientPhone) {
+        showToast("Nombre completo y número de celular son obligatorios.", "error");
+        return;
+      }
+      const note = textarea.value.trim();
+      scheduleAppointment(isoDate, time, null, note, patientName, patientPhone);
+      closeModal();
+      return;
+    }
+    
+    // Modo admin: usar currentUser
     const note = textarea.value.trim();
     scheduleAppointment(isoDate, time, currentUser, note);
     closeModal();
@@ -1543,26 +1669,32 @@ async function init() {
   // Autenticación
   setupAuthUI();
 
-  // Si hay usuario guardado en localStorage o sessionStorage, restaurarlo
-  const storedLocal = localStorage.getItem("psico_user");
-  const storedSession = !storedLocal ? sessionStorage.getItem("psico_user") : null;
-  const stored = storedLocal || storedSession;
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      if (parsed && parsed.id) {
-        await onUserAuthenticated(parsed, storedLocal ? "local" : "session");
-        return;
+  if (isAdminMode) {
+    // Modo admin: requiere login
+    const storedLocal = localStorage.getItem("psico_user");
+    const storedSession = !storedLocal ? sessionStorage.getItem("psico_user") : null;
+    const stored = storedLocal || storedSession;
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.id && parsed.role === 'admin') {
+          await onUserAuthenticated(parsed, storedLocal ? "local" : "session");
+          return;
+        }
+      } catch {
+        // Ignorar errores de parseo corrupto
+        localStorage.removeItem("psico_user");
+        sessionStorage.removeItem("psico_user");
       }
-    } catch {
-      // Ignorar errores de parseo corrupto
-      localStorage.removeItem("psico_user");
-      sessionStorage.removeItem("psico_user");
     }
+    // Si no hay admin autenticado, mostrar overlay de login
+    showAuthOverlay();
+  } else {
+    // Modo usuario: sin login, cargar directamente
+    hideAuthOverlay();
+    await loadAllData();
   }
-
-  // Si no hay usuario autenticado, mostrar overlay y solo el calendario vacío
-  showAuthOverlay();
+  
   renderCalendar();
 
   // Efecto líquido que sigue el cursor en los banners de bienvenida
@@ -1682,36 +1814,77 @@ async function onUserAuthenticated(user, storage = "local") {
 function setupAuthUI() {
   const loginForm = document.getElementById("login-form");
   const logoutBtn = document.getElementById("logout-btn");
+  const privacyCheckbox = document.getElementById("login-privacy");
+  const privacyLabel = privacyCheckbox ? privacyCheckbox.closest('.auth-privacy') : null;
 
   if (!loginForm) return;
 
+  // En modo usuario, ocultar el formulario de login completamente
+  if (!isAdminMode) {
+    const authOverlay = document.getElementById("auth-overlay");
+    if (authOverlay) authOverlay.classList.add("hidden");
+    if (privacyLabel) privacyLabel.style.display = 'none';
+    return;
+  }
+
+  // En modo admin, mostrar solo campos de usuario y contraseña
+  if (privacyLabel) privacyLabel.style.display = 'none';
+  
+  // Modificar el formulario para tener solo usuario y contraseña
+  const nameInput = document.getElementById("login-name");
+  const idNumberInput = document.getElementById("login-id-number");
+  const authSubtitle = document.querySelector(".auth-subtitle");
+  
+  if (isAdminMode) {
+    if (authSubtitle) {
+      authSubtitle.textContent = "Inicia sesión como administrador para gestionar las citas.";
+    }
+    if (nameInput) {
+      nameInput.placeholder = "Usuario";
+      const label = nameInput.previousElementSibling;
+      if (label && label.tagName === 'LABEL') {
+        label.textContent = "Usuario";
+      }
+    }
+    if (idNumberInput) {
+      idNumberInput.type = "password";
+      idNumberInput.placeholder = "Contraseña";
+      const label = idNumberInput.previousElementSibling;
+      if (label && label.tagName === 'LABEL') {
+        label.textContent = "Contraseña";
+      }
+    }
+  } else {
+    // En modo usuario, ocultar completamente el overlay
+    const authOverlay = document.getElementById("auth-overlay");
+    if (authOverlay) authOverlay.classList.add("hidden");
+  }
+
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const name = document.getElementById("login-name").value.trim();
-    const idNumber = document.getElementById("login-id-number").value.trim();
-    const privacyCheckbox = document.getElementById("login-privacy");
+    const username = document.getElementById("login-name").value.trim();
+    const password = document.getElementById("login-id-number").value.trim();
 
-    // Validar checkbox de privacidad
-    if (!privacyCheckbox || !privacyCheckbox.checked) {
-      showToast("Debes aceptar que tus datos están seguros para continuar.", "error");
-      return;
-    }
-
-    if (!name || !idNumber) {
-      showToast("Nombre completo y número de identificación son obligatorios.", "error");
+    if (!username || !password) {
+      showToast("Usuario y contraseña son obligatorios.", "error");
       return;
     }
 
     try {
       showLoader();
-      const res = await fetch(`${API_BASE}/auth/login`, {
+      const res = await fetch(`${API_BASE}/auth/admin-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, idNumber }),
+        body: JSON.stringify({ username, password }),
       });
       const data = await res.json();
       if (!res.ok) {
         showToast(data.error || "No se pudo iniciar sesión.", "error");
+        return;
+      }
+      // Verificar que sea admin
+      if (data.role !== 'admin') {
+        showToast("Solo los administradores pueden acceder a esta vista.", "error");
         return;
       }
       // Siempre guardar sesión automáticamente (localStorage)
@@ -1724,14 +1897,11 @@ function setupAuthUI() {
     }
   });
 
-  // Código de registro removido - los usuarios ahora se crean desde el panel de admin
-
   if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
       logout();
     });
   }
-
 }
 
 function setupPasswordToggle(passwordInputId, toggleButton) {
@@ -1797,12 +1967,14 @@ function updateUserDisplay() {
   const el = document.getElementById("user-display");
   if (!el) return;
 
-  if (!currentUser) {
+  // En modo usuario, siempre ocultar el display de usuario
+  if (!isAdminMode || !currentUser) {
     el.textContent = "";
     el.classList.add("hidden");
     return;
   }
 
+  // Solo mostrar en modo admin cuando hay usuario autenticado
   el.textContent = currentUser.name || "Usuario";
   el.classList.remove("hidden");
 }

@@ -50,7 +50,10 @@ db.serialize(() => {
   db.run(`
     CREATE TABLE IF NOT EXISTS appointments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
+      user_id INTEGER,         -- NULL para citas de usuarios anónimos, solo admin tiene user_id
+      device_id TEXT,          -- ID del dispositivo (localStorage) para usuarios anónimos
+      patient_name TEXT NOT NULL, -- Nombre completo del paciente
+      patient_phone TEXT NOT NULL, -- Teléfono del paciente
       date TEXT NOT NULL,      -- 'YYYY-MM-DD'
       time TEXT NOT NULL,      -- 'HH:MM'
       status TEXT NOT NULL,    -- 'pending', 'confirmed', 'rejected', 'cancelled'
@@ -61,6 +64,23 @@ db.serialize(() => {
       FOREIGN KEY (user_id) REFERENCES users(id)
     )
   `);
+  
+  // Agregar nuevas columnas si la tabla ya existe (migración)
+  db.run("ALTER TABLE appointments ADD COLUMN device_id TEXT", (err) => {
+    if (err && !/duplicate column name/i.test(err.message)) {
+      console.error("Error al agregar columna device_id:", err.message);
+    }
+  });
+  db.run("ALTER TABLE appointments ADD COLUMN patient_name TEXT", (err) => {
+    if (err && !/duplicate column name/i.test(err.message)) {
+      console.error("Error al agregar columna patient_name:", err.message);
+    }
+  });
+  db.run("ALTER TABLE appointments ADD COLUMN patient_phone TEXT", (err) => {
+    if (err && !/duplicate column name/i.test(err.message)) {
+      console.error("Error al agregar columna patient_phone:", err.message);
+    }
+  });
 
   // Días deshabilitados
   db.run(`
