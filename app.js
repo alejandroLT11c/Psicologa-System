@@ -1109,6 +1109,121 @@ function openProfileModal() {
   backdrop.classList.remove("hidden");
 }
 
+// Función específica para editar perfil de la psicóloga (solo admin)
+function openPsychologistProfileModal() {
+  if (!isAdminMode || !currentUser || currentUser.role !== 'admin') return;
+
+  const backdrop = document.getElementById("modal-backdrop");
+  const title = document.getElementById("modal-title");
+  const body = document.getElementById("modal-body");
+
+  title.textContent = "Editar Perfil de la Psicóloga";
+  body.innerHTML = "";
+
+  const form = document.createElement("div");
+  form.className = "auth-form";
+
+  const nameGroup = document.createElement("div");
+  nameGroup.className = "auth-field-group";
+  const nameLabel = document.createElement("label");
+  nameLabel.textContent = "Nombre completo";
+  nameLabel.setAttribute("for", "psychologist-name-input");
+  const nameInput = document.createElement("input");
+  nameInput.id = "psychologist-name-input";
+  nameInput.type = "text";
+  nameInput.value = currentUser.name || "";
+  nameInput.required = true;
+  nameGroup.appendChild(nameLabel);
+  nameGroup.appendChild(nameInput);
+
+  const phoneGroup = document.createElement("div");
+  phoneGroup.className = "auth-field-group";
+  const phoneLabel = document.createElement("label");
+  phoneLabel.textContent = "Número de teléfono";
+  phoneLabel.setAttribute("for", "psychologist-phone-input");
+  const phoneInput = document.createElement("input");
+  phoneInput.id = "psychologist-phone-input";
+  phoneInput.type = "tel";
+  phoneInput.value = currentUser.phone || "";
+  phoneInput.required = true;
+  phoneGroup.appendChild(phoneLabel);
+  phoneGroup.appendChild(phoneInput);
+
+  form.appendChild(nameGroup);
+  form.appendChild(phoneGroup);
+
+  const actions = document.createElement("div");
+  actions.className = "modal-actions";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.className = "btn btn-reject";
+  cancelBtn.textContent = "Cancelar";
+  cancelBtn.addEventListener("click", closeModal);
+
+  const saveBtn = document.createElement("button");
+  saveBtn.className = "btn btn-confirm";
+  saveBtn.textContent = "Guardar cambios";
+  saveBtn.addEventListener("click", async () => {
+    const newName = nameInput.value.trim();
+    const newPhone = phoneInput.value.trim();
+    
+    if (!newName || !newPhone) {
+      showToast("Nombre completo y número de teléfono son obligatorios.", "error");
+      return;
+    }
+    
+    await updatePsychologistProfile(newName, newPhone);
+  });
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(saveBtn);
+
+  body.appendChild(form);
+  body.appendChild(actions);
+
+  backdrop.classList.remove("hidden");
+}
+
+async function updatePsychologistProfile(name, phone) {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  
+  try {
+    showLoader();
+    const res = await fetch(`${API_BASE}/users/${currentUser.id}/profile`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, phone }),
+    });
+    
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || "No se pudo actualizar el perfil.", "error");
+      return;
+    }
+
+    // Actualizar currentUser con los nuevos datos
+    currentUser.name = data.name;
+    currentUser.phone = data.phone;
+    
+    // Actualizar el display del usuario
+    updateUserDisplay();
+    
+    // Actualizar currentUser y el display
+    currentUser.name = data.name;
+    currentUser.phone = data.phone;
+    updatePsychologistDisplay();
+    updateUserDisplay();
+    
+    showToast("Perfil actualizado correctamente.", "success");
+    closeModal();
+  } catch (err) {
+    console.error(err);
+    showToast("Ocurrió un error al actualizar el perfil.", "error");
+  } finally {
+    hideLoader();
+  }
+}
+
 async function updateUserProfile(name, idNumber) {
   if (!currentUser) return;
   if (!name || !idNumber) {
@@ -1669,6 +1784,9 @@ async function init() {
   // Autenticación
   setupAuthUI();
 
+  // Configurar evento para editar perfil de la psicóloga (solo en modo admin)
+  setupPsychologistProfileClick();
+
   if (isAdminMode) {
     // Modo admin: requiere login
     const storedLocal = localStorage.getItem("psico_user");
@@ -1784,11 +1902,29 @@ function saveUserToStorage(user, storage) {
   }
 }
 
+function updatePsychologistDisplay() {
+  // Actualizar el nombre en la sección de perfil si es admin
+  if (isAdminMode && currentUser && currentUser.role === 'admin') {
+    const psychologistNameEl = document.getElementById("psychologist-name");
+    if (psychologistNameEl) {
+      psychologistNameEl.textContent = `Psicóloga ${currentUser.name}`;
+    }
+    
+    // Actualizar el teléfono en la sección de perfil
+    const profileContact = document.querySelector(".profile-contact");
+    if (profileContact && currentUser.phone) {
+      const phoneFormatted = currentUser.phone.replace(/\s/g, '');
+      profileContact.innerHTML = `Teléfono: <a href="tel:${phoneFormatted}">${currentUser.phone}</a>`;
+    }
+  }
+}
+
 async function onUserAuthenticated(user, storage = "local") {
   currentUser = user;
   saveUserToStorage(user, storage);
   hideAuthOverlay();
   updateUserDisplay();
+  updatePsychologistDisplay();
 
   try {
     showLoader();
@@ -1798,6 +1934,11 @@ async function onUserAuthenticated(user, storage = "local") {
     try {
       switchRole(initialRole);
       renderCalendar();
+      
+      // Si es admin, configurar el click en el nombre de la psicóloga
+      if (isAdminMode && currentUser.role === 'admin') {
+        setupPsychologistProfileClick();
+      }
     } catch (uiErr) {
       console.error("Error al actualizar la interfaz después de autenticarse:", uiErr);
     }
@@ -1809,6 +1950,30 @@ async function onUserAuthenticated(user, storage = "local") {
 
   // Inicializar el efecto líquido del cursor después de que la UI esté lista
   setupLiquidCursorEffect();
+}
+
+function setupPsychologistProfileClick() {
+  const psychologistNameEl = document.getElementById("psychologist-name");
+  if (!psychologistNameEl) return;
+  
+  // Remover listeners anteriores si existen
+  const newEl = psychologistNameEl.cloneNode(true);
+  psychologistNameEl.parentNode.replaceChild(newEl, psychologistNameEl);
+  
+  // Solo hacer clickeable en modo admin cuando hay usuario autenticado
+  if (isAdminMode) {
+    newEl.style.cursor = 'pointer';
+    newEl.style.textDecoration = 'underline';
+    newEl.style.textDecorationStyle = 'dotted';
+    newEl.addEventListener("click", () => {
+      if (currentUser && currentUser.role === 'admin') {
+        openPsychologistProfileModal();
+      }
+    });
+  } else {
+    newEl.style.cursor = 'default';
+    newEl.style.textDecoration = 'none';
+  }
 }
 
 function setupAuthUI() {

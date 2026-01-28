@@ -99,6 +99,50 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
+// Actualizar perfil del administrador (solo admin puede actualizar su propio perfil)
+app.put("/api/users/:userId/profile", async (req, res) => {
+  const userId = parseInt(req.params.userId, 10);
+  const { name, phone } = req.body;
+  
+  if (!userId) {
+    return res.status(400).json({ error: "ID de usuario inválido." });
+  }
+
+  if (!name || !phone) {
+    return res.status(400).json({ error: "Nombre y teléfono son obligatorios." });
+  }
+
+  try {
+    // Verificar que el usuario existe y es admin
+    const users = await runQuery("SELECT id, role FROM users WHERE id = ?", [userId]);
+    if (users.length === 0) {
+      return res.status(404).json({ error: "Usuario no encontrado." });
+    }
+
+    const user = users[0];
+    if (user.role !== "admin") {
+      return res.status(403).json({ error: "Solo los administradores pueden actualizar su perfil." });
+    }
+
+    // Actualizar nombre y teléfono
+    await runExecute(
+      "UPDATE users SET name = ?, phone = ? WHERE id = ?",
+      [name.trim(), phone.trim(), userId]
+    );
+
+    // Obtener el usuario actualizado
+    const updated = await runQuery(
+      "SELECT id, name, id_number, phone, role FROM users WHERE id = ?",
+      [userId]
+    );
+
+    res.json(updated[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al actualizar el perfil." });
+  }
+});
+
 // Eliminar usuario (solo para admin/psicóloga)
 app.delete("/api/users/:userId", async (req, res) => {
   const userId = parseInt(req.params.userId, 10);
