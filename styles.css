@@ -883,6 +883,21 @@ body.dark-theme .auth-helper {
   animation: fadeInUp 0.7s ease-out 0.25s forwards;
 }
 
+/* Tarjeta de perfil clickeable en modo admin (editar perfil) */
+.profile-card.profile-card--editable {
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.profile-card.profile-card--editable:hover {
+  box-shadow: 0 12px 32px rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+.profile-card.profile-card--editable:hover .profile-info h2 {
+  color: var(--coop-green);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+}
+
 .profile-avatar {
   flex-shrink: 0;
 }
