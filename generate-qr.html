@@ -111,19 +111,22 @@
     </p>
     
     <div class="input-group">
-      <label for="url-input">URL de la aplicación:</label>
+      <label for="url-input">URL base de la aplicación:</label>
       <input 
         type="url" 
         id="url-input" 
-        placeholder="https://psicologa-frontend.onrender.com"
-        value=""
+        placeholder="https://psicologa-system.onrender.com"
+        value="https://psicologa-system.onrender.com"
       />
     </div>
     
-    <button onclick="generateQR()">Generar Código QR</button>
+    <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+      <button onclick="generateQR('user')" style="flex: 1; background: #48bb78;">Generar QR Usuario</button>
+      <button onclick="generateQR('admin')" style="flex: 1; background: #ed8936;">Generar QR Admin</button>
+    </div>
     
     <div id="qr-container">
-      <h2 style="margin-bottom: 1rem; color: #2d3748;">Tu código QR está listo</h2>
+      <h2 style="margin-bottom: 1rem; color: #2d3748;" id="qr-title">Tu código QR está listo</h2>
       <canvas id="qr-code"></canvas>
       <button class="download-btn" onclick="downloadQR()">Descargar QR como imagen</button>
     </div>
@@ -133,50 +136,130 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
   <script>
     let currentQRDataURL = null;
+    let currentQRType = null;
 
-    function generateQR() {
-      const url = document.getElementById('url-input').value.trim();
+    async function generateQR(type) {
+      const baseUrl = document.getElementById('url-input').value.trim();
       
-      if (!url) {
+      if (!baseUrl) {
         alert('Por favor, ingresa una URL válida');
         return;
       }
 
       // Validar que sea una URL válida
+      let url;
       try {
+        const base = new URL(baseUrl);
+        if (type === 'admin') {
+          url = baseUrl + '?admin=true';
+        } else {
+          url = baseUrl;
+        }
         new URL(url);
       } catch (e) {
         alert('Por favor, ingresa una URL válida (debe comenzar con http:// o https://)');
         return;
       }
 
+      currentQRType = type;
+      const title = document.getElementById('qr-title');
+      if (type === 'admin') {
+        title.textContent = '🔴 Código QR de Administrador';
+      } else {
+        title.textContent = '🔵 Código QR de Usuario';
+      }
+
       const canvas = document.getElementById('qr-code');
       const container = document.getElementById('qr-container');
       const warning = document.getElementById('warning');
+      const ctx = canvas.getContext('2d');
 
-      // Generar el código QR
-      QRCode.toCanvas(canvas, url, {
-        width: 400,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
-      }, function (error) {
-        if (error) {
-          console.error(error);
-          alert('Error al generar el código QR. Por favor, intenta de nuevo.');
-          return;
-        }
+      // Mostrar mensaje de carga
+      container.style.display = 'block';
+      canvas.style.display = 'none';
+      const loadingText = document.createElement('p');
+      loadingText.id = 'loading-text';
+      loadingText.textContent = 'Generando código QR...';
+      loadingText.style.color = '#4a5568';
+      if (!document.getElementById('loading-text')) {
+        container.insertBefore(loadingText, canvas);
+      }
 
-        // Convertir canvas a imagen para descarga
+      try {
+        // Usar API online para generar QR (más confiable que CDN)
+        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(url)}`;
+        
+        // Cargar la imagen del QR desde la API
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        img.onload = function() {
+          // Dibujar en el canvas
+          canvas.width = 400;
+          canvas.height = 400;
+          ctx.drawImage(img, 0, 0);
+          
+          // Convertir canvas a imagen para descarga
+          currentQRDataURL = canvas.toDataURL('image/png');
+          
+          // Mostrar el canvas y ocultar el texto de carga
+          canvas.style.display = 'block';
+          const loadingEl = document.getElementById('loading-text');
+          if (loadingEl) {
+            loadingEl.remove();
+          }
+          warning.style.display = 'block';
+        };
+        
+        img.onerror = function() {
+          // Si la API falla, intentar con otra
+          tryAlternativeQR(url, canvas, ctx, container, warning);
+        };
+        
+        img.src = qrApiUrl;
+        
+      } catch (error) {
+        console.error(error);
+        alert('Error al generar el código QR. Por favor, intenta de nuevo.');
+        const loadingEl = document.getElementById('loading-text');
+        if (loadingEl) {
+          loadingEl.remove();
+        }
+        container.style.display = 'none';
+      }
+    }
+
+    function tryAlternativeQR(url, canvas, ctx, container, warning) {
+      // Intentar con otra API alternativa
+      const altApiUrl = `https://chart.googleapis.com/chart?chs=400x400&cht=qr&chl=${encodeURIComponent(url)}`;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      img.onload = function() {
+        canvas.width = 400;
+        canvas.height = 400;
+        ctx.drawImage(img, 0, 0);
         currentQRDataURL = canvas.toDataURL('image/png');
-        container.style.display = 'block';
+        canvas.style.display = 'block';
+        const loadingEl = document.getElementById('loading-text');
+        if (loadingEl) {
+          loadingEl.remove();
+        }
         warning.style.display = 'block';
-      });
+      };
+      
+      img.onerror = function() {
+        alert('Error al generar el código QR. Por favor, verifica tu conexión a internet.');
+        const loadingEl = document.getElementById('loading-text');
+        if (loadingEl) {
+          loadingEl.remove();
+        }
+        container.style.display = 'none';
+      };
+      
+      img.src = altApiUrl;
     }
 
     function downloadQR() {
@@ -185,9 +268,11 @@
         return;
       }
 
-      const url = document.getElementById('url-input').value.trim();
       const link = document.createElement('a');
-      link.download = 'codigo-qr-psicologa.png';
+      const filename = currentQRType === 'admin' 
+        ? 'codigo-qr-admin.png' 
+        : 'codigo-qr-usuario.png';
+      link.download = filename;
       link.href = currentQRDataURL;
       link.click();
     }

@@ -1111,15 +1111,12 @@ function openProfileModal() {
 
 // Función específica para editar perfil de la psicóloga (solo admin)
 function openPsychologistProfileModal() {
-  console.log("openPsychologistProfileModal llamado", { isAdminMode, currentUser });
-  if (!isAdminMode || !currentUser || currentUser.role !== 'admin') {
-    console.log("No se puede abrir: condiciones no cumplidas");
-    return;
-  }
+  if (!isAdminMode || !currentUser || currentUser.role !== 'admin') return;
 
   const backdrop = document.getElementById("modal-backdrop");
   const title = document.getElementById("modal-title");
   const body = document.getElementById("modal-body");
+  if (!backdrop || !title || !body) return;
 
   title.textContent = "Editar Perfil de la Psicóloga";
   body.innerHTML = "";
@@ -1792,7 +1789,7 @@ async function init() {
   // Usar setTimeout para asegurar que el DOM esté completamente cargado
   setTimeout(() => {
     setupPsychologistProfileClick();
-  }, 500);
+  }, 1000);
 
   if (isAdminMode) {
     // Modo admin: requiere login
@@ -1914,9 +1911,15 @@ function updatePsychologistDisplay() {
   if (isAdminMode && currentUser && currentUser.role === 'admin') {
     const psychologistNameEl = document.getElementById("psychologist-name");
     if (psychologistNameEl) {
-      psychologistNameEl.textContent = `Psicóloga ${currentUser.name}`;
-      // Reconfigurar el evento después de actualizar el texto
-      setupPsychologistProfileClick();
+      const currentText = psychologistNameEl.textContent;
+      const newText = `Psicóloga ${currentUser.name}`;
+      if (currentText !== newText) {
+        psychologistNameEl.textContent = newText;
+      }
+      // Reconfigurar el evento después de actualizar el texto (con delay para asegurar que el DOM se actualizó)
+      setTimeout(() => {
+        setupPsychologistProfileClick();
+      }, 100);
     }
     
     // Actualizar el teléfono en la sección de perfil
@@ -1961,52 +1964,43 @@ async function onUserAuthenticated(user, storage = "local") {
   setupLiquidCursorEffect();
 }
 
+// Delegación de eventos: un solo listener en document para el nombre de la psicóloga
 function setupPsychologistProfileClick() {
+  // Remover listener anterior si existe (evitar duplicados)
+  document.removeEventListener("click", onDocumentClickPsychologistName);
+  document.addEventListener("click", onDocumentClickPsychologistName);
+
+  // Actualizar estilos del elemento si existe
   const psychologistNameEl = document.getElementById("psychologist-name");
-  if (!psychologistNameEl) {
-    console.log("Elemento psychologist-name no encontrado, reintentando...");
-    // Si el elemento no existe aún, intentar de nuevo después de un breve delay
-    setTimeout(setupPsychologistProfileClick, 100);
-    return;
-  }
-  
-  console.log("Configurando click en nombre de psicóloga", { isAdminMode, currentUser });
-  
-  // Solo hacer clickeable en modo admin cuando hay usuario autenticado
-  if (isAdminMode && currentUser && currentUser.role === 'admin') {
-    // Usar delegación de eventos en el contenedor padre para mayor robustez
-    const profileInfo = psychologistNameEl.closest('.profile-info');
-    if (profileInfo) {
-      // Remover listener anterior si existe
-      profileInfo.removeEventListener("click", handlePsychologistNameClick);
-      profileInfo.addEventListener("click", handlePsychologistNameClick);
+  if (psychologistNameEl) {
+    if (isAdminMode && currentUser && currentUser.role === 'admin') {
+      psychologistNameEl.style.cursor = 'pointer';
+      psychologistNameEl.style.textDecoration = 'underline';
+      psychologistNameEl.style.textDecorationStyle = 'dotted';
+      psychologistNameEl.style.color = '#22c55e';
+      psychologistNameEl.title = 'Click para editar perfil';
+    } else {
+      psychologistNameEl.style.cursor = 'default';
+      psychologistNameEl.style.textDecoration = 'none';
+      psychologistNameEl.style.color = '';
+      psychologistNameEl.title = '';
     }
-    
-    // Configurar estilos visuales
-    psychologistNameEl.style.cursor = 'pointer';
-    psychologistNameEl.style.textDecoration = 'underline';
-    psychologistNameEl.style.textDecorationStyle = 'dotted';
-    psychologistNameEl.title = 'Click para editar perfil';
-    
-    console.log("Evento configurado correctamente");
-  } else {
-    psychologistNameEl.style.cursor = 'default';
-    psychologistNameEl.style.textDecoration = 'none';
-    psychologistNameEl.title = '';
   }
 }
 
-// Handler separado para el click en el nombre de la psicóloga
-function handlePsychologistNameClick(e) {
+function onDocumentClickPsychologistName(e) {
+  // Solo en modo admin y con usuario admin
+  if (!isAdminMode || !currentUser || currentUser.role !== 'admin') return;
+  // Verificar si el click fue en el h2 con id psychologist-name (el de la tarjeta de perfil, no el del header)
+  const target = e.target;
   const psychologistNameEl = document.getElementById("psychologist-name");
   if (!psychologistNameEl) return;
-  
-  // Verificar que el click fue en el nombre o cerca de él
-  const clickedEl = e.target;
-  if (clickedEl.id === 'psychologist-name' || clickedEl.closest('#psychologist-name')) {
+  // Asegurarnos de que el click sea en el nombre de la SECCIÓN DE PERFIL (profile-section), no en el user-display del header
+  const profileSection = document.querySelector(".profile-section");
+  if (!profileSection || !profileSection.contains(target)) return;
+  if (target.id === "psychologist-name" || target.closest("#psychologist-name")) {
     e.preventDefault();
     e.stopPropagation();
-    console.log("Click en nombre de psicóloga detectado");
     openPsychologistProfileModal();
   }
 }
