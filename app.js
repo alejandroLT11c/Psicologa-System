@@ -1569,7 +1569,6 @@ function openConfirmModal(isoDate, time) {
   cancelBtn.textContent = "Cancelar";
   cancelBtn.addEventListener("click", closeModal);
 
-  // En modo usuario, agregar campos de nombre y teléfono
   let nameInput, phoneInput;
   if (!isAdminMode) {
     const nameGroup = document.createElement("div");
@@ -1583,7 +1582,6 @@ function openConfirmModal(isoDate, time) {
     nameInput.required = true;
     nameGroup.appendChild(nameLabel);
     nameGroup.appendChild(nameInput);
-    body.insertBefore(nameGroup, noteLabel);
 
     const phoneGroup = document.createElement("div");
     phoneGroup.className = "auth-field-group";
@@ -1596,8 +1594,16 @@ function openConfirmModal(isoDate, time) {
     phoneInput.required = true;
     phoneGroup.appendChild(phoneLabel);
     phoneGroup.appendChild(phoneInput);
-    body.insertBefore(phoneGroup, nameGroup.nextSibling);
+
+    body.appendChild(p);
+    body.appendChild(nameGroup);
+    body.appendChild(phoneGroup);
+  } else {
+    body.appendChild(p);
   }
+
+  body.appendChild(noteLabel);
+  body.appendChild(textarea);
 
   const confirmBtn = document.createElement("button");
   confirmBtn.className = "btn btn-confirm";
@@ -1607,8 +1613,6 @@ function openConfirmModal(isoDate, time) {
       alert("Debes iniciar sesión para agendar una cita.");
       return;
     }
-    
-    // Validar campos en modo usuario
     if (!isAdminMode) {
       const patientName = nameInput.value.trim();
       const patientPhone = phoneInput.value.trim();
@@ -1621,8 +1625,6 @@ function openConfirmModal(isoDate, time) {
       closeModal();
       return;
     }
-    
-    // Modo admin: usar currentUser
     const note = textarea.value.trim();
     scheduleAppointment(isoDate, time, currentUser, note);
     closeModal();
@@ -1630,10 +1632,6 @@ function openConfirmModal(isoDate, time) {
 
   actions.appendChild(cancelBtn);
   actions.appendChild(confirmBtn);
-
-  body.appendChild(p);
-  body.appendChild(noteLabel);
-  body.appendChild(textarea);
   body.appendChild(actions);
 
   backdrop.classList.remove("hidden");
