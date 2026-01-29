@@ -108,7 +108,9 @@ app.put("/api/users/:userId/profile", async (req, res) => {
     return res.status(400).json({ error: "ID de usuario inválido." });
   }
 
-  if (!name || !phone) {
+  const nameStr = name != null ? String(name).trim() : "";
+  const phoneStr = phone != null ? String(phone).trim() : "";
+  if (!nameStr || !phoneStr) {
     return res.status(400).json({ error: "Nombre y teléfono son obligatorios." });
   }
 
@@ -126,7 +128,7 @@ app.put("/api/users/:userId/profile", async (req, res) => {
     const apellidosVal = apellidos != null ? String(apellidos).trim() : "";
     await runExecute(
       "UPDATE users SET name = ?, apellidos = ?, phone = ? WHERE id = ?",
-      [name.trim(), apellidosVal, phone.trim(), userId]
+      [nameStr, apellidosVal, phoneStr, userId]
     );
 
     const updated = await runQuery(
@@ -134,8 +136,15 @@ app.put("/api/users/:userId/profile", async (req, res) => {
       [userId]
     );
     const row = updated[0];
-    if (row && row.apellidos == null) row.apellidos = "";
-    res.json(row);
+    if (!row) return res.status(500).json({ error: "Error al leer el perfil actualizado." });
+    res.json({
+      id: row.id,
+      name: row.name || "",
+      apellidos: row.apellidos != null ? row.apellidos : "",
+      id_number: row.id_number,
+      phone: row.phone != null ? String(row.phone) : "",
+      role: row.role,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al actualizar el perfil." });
@@ -155,7 +164,7 @@ app.get("/api/public/psychologist-profile", async (req, res) => {
     res.json({
       name: r.name || "Valentina",
       apellidos: r.apellidos != null ? r.apellidos : "Ordoñez Castaño",
-      phone: r.phone || "",
+      phone: r.phone != null ? String(r.phone) : "",
     });
   } catch (err) {
     console.error(err);

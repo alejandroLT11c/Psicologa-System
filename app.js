@@ -1204,10 +1204,15 @@ async function updatePsychologistProfile(name, apellidos, phone) {
   
   try {
     showLoader();
+    const phoneStr = phone != null ? String(phone).trim() : "";
     const res = await fetch(`${API_BASE}/users/${currentUser.id}/profile`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, apellidos: apellidos != null ? apellidos : "", phone }),
+      body: JSON.stringify({
+        name: name != null ? String(name).trim() : "",
+        apellidos: apellidos != null ? String(apellidos).trim() : "",
+        phone: phoneStr,
+      }),
     });
     
     const data = await res.json();
@@ -1216,9 +1221,9 @@ async function updatePsychologistProfile(name, apellidos, phone) {
       return;
     }
 
-    currentUser.name = data.name;
+    currentUser.name = data.name != null ? data.name : currentUser.name;
     currentUser.apellidos = data.apellidos != null ? data.apellidos : "";
-    currentUser.phone = data.phone;
+    currentUser.phone = data.phone != null ? String(data.phone) : phoneStr;
 
     const storageUsed = localStorage.getItem("psico_user") ? "local" : "session";
     saveUserToStorage(currentUser, storageUsed);
@@ -1243,8 +1248,8 @@ async function loadPsychologistProfile() {
     const res = await fetch(`${API_BASE}/public/psychologist-profile`);
     const data = await res.ok ? res.json() : {};
     const name = (data.name || "Valentina").trim();
-    const apellidos = (data.apellidos != null ? data.apellidos : "Ordoñez Castaño").trim();
-    const phone = (data.phone != null ? data.phone : "").trim();
+    const apellidos = (data.apellidos != null ? String(data.apellidos) : "Ordoñez Castaño").trim();
+    const phone = (data.phone != null ? String(data.phone) : "").trim();
     const fullName = [name, apellidos].filter(Boolean).join(" ");
 
     const psychologistNameEl = document.getElementById("psychologist-name");
@@ -1788,9 +1793,11 @@ async function init() {
 
   modalClose.addEventListener("click", closeModal);
   modalBackdrop.addEventListener("click", (e) => {
-    if (e.target === modalBackdrop) {
-      closeModal();
-    }
+    if (e.target !== modalBackdrop) return;
+    // No cerrar al hacer clic fuera en el modal "Editar Perfil de la Psicóloga"
+    const modalTitle = document.getElementById("modal-title");
+    if (modalTitle && modalTitle.textContent.includes("Editar Perfil de la Psicóloga")) return;
+    closeModal();
   });
 
   const toggleDayBtn = document.getElementById("toggle-day");
