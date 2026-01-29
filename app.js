@@ -1716,34 +1716,19 @@ function handleDayClick(date) {
     const dayOfWeek = date.getDay(); // 0 = Domingo, 6 = Sábado
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
-    // En móvil usamos modal; si el día está deshabilitado, es fin de semana o es pasado, no abrimos nada
-    if (window.innerWidth <= 768) {
-      if (disabledDays.has(iso) || isWeekend) {
-        showToast("Este día ha sido deshabilitado por la psicóloga.", "error");
-        return;
-      }
-      if (isPastDay(date)) {
-        showToast("No es posible agendar citas en fechas pasadas.", "error");
-        return;
-      }
-
-      loadDisabledHoursForDate(iso).then(() => {
-        openDayBookingModal(date);
-      });
-    } else {
-      // En desktop también verificamos si es fin de semana o está deshabilitado
-      if (disabledDays.has(iso) || isWeekend) {
-        showToast("Este día ha sido deshabilitado por la psicóloga.", "error");
-        return;
-      }
-      if (isPastDay(date)) {
-        showToast("No es posible agendar citas en fechas pasadas.", "error");
-        return;
-      }
-      loadDisabledHoursForDate(iso).then(() => {
-        renderPatientTimeSlots();
-      });
+    if (disabledDays.has(iso) || isWeekend) {
+      showToast("Este día ha sido deshabilitado por la psicóloga.", "error");
+      return;
     }
+    if (isPastDay(date)) {
+      showToast("No es posible agendar citas en fechas pasadas.", "error");
+      return;
+    }
+
+    // Siempre abrir modal con fecha y horarios; al elegir un horario se abre el modal de nombre y teléfono
+    loadDisabledHoursForDate(iso).then(() => {
+      openDayBookingModal(date);
+    });
   } else {
     const label = document.getElementById("admin-selected-day-text");
     if (label) label.textContent = formatDateLong(date);
@@ -1923,7 +1908,8 @@ async function init() {
     // Si no hay admin autenticado, mostrar overlay de login
     showAuthOverlay();
   } else {
-    // Modo usuario: mostrar perfil desde localStorage de inmediato (por si el API tarda o falla) y luego cargar desde el servidor
+    // Modo usuario: rol paciente, panel de agendar cita visible
+    currentRole = "paciente";
     var storedProfile = loadPublicProfileFromStorage();
     if (storedProfile) {
       renderPsychologistCard(storedProfile.name, storedProfile.apellidos, storedProfile.phone);
@@ -1931,6 +1917,7 @@ async function init() {
     hideAuthOverlay();
     await loadAllData();
     await loadPsychologistProfile();
+    switchRole("paciente");
   }
   
   renderCalendar();
