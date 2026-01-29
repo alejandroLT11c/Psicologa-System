@@ -1202,18 +1202,17 @@ async function updatePsychologistProfile(name, phone) {
       return;
     }
 
-    // Actualizar currentUser con los nuevos datos
+    // Actualizar currentUser con los datos que devolvió el servidor
     currentUser.name = data.name;
     currentUser.phone = data.phone;
-    
-    // Actualizar el display del usuario
+
+    // Guardar en localStorage/sessionStorage para que al recargar la página siga el cambio
+    const storageUsed = localStorage.getItem("psico_user") ? "local" : "session";
+    saveUserToStorage(currentUser, storageUsed);
+
+    // Actualizar de inmediato el header (nombre) y la tarjeta de perfil (nombre + teléfono)
     updateUserDisplay();
-    
-    // Actualizar currentUser y el display
-    currentUser.name = data.name;
-    currentUser.phone = data.phone;
     updatePsychologistDisplay();
-    updateUserDisplay();
     
     showToast("Perfil actualizado correctamente.", "success");
     closeModal();
