@@ -1,5 +1,5 @@
 // Service Worker para PWA
-const CACHE_NAME = 'psicologa-app-v2';
+const CACHE_NAME = 'psicologa-app-v3';
 const urlsToCache = [
   '/',
   '/index.html',

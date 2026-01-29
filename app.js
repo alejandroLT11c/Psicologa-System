@@ -1964,17 +1964,29 @@ async function onUserAuthenticated(user, storage = "local") {
   setupLiquidCursorEffect();
 }
 
-// Delegación de eventos: toda la tarjeta de perfil es clickeable en modo admin
+// Handler para abrir modal de perfil (evitar duplicar lógica)
+function handleProfileCardClick(e) {
+  if (!isAdminMode || !currentUser || currentUser.role !== 'admin') return;
+  if (e.target.closest('a[href^="tel:"]')) return; // no interceptar enlace de teléfono
+  e.preventDefault();
+  e.stopPropagation();
+  openPsychologistProfileModal();
+}
+
+// Delegación + listener directo en la tarjeta para que el perfil siempre sea clickeable en admin
 function setupPsychologistProfileClick() {
   document.removeEventListener("click", onDocumentClickPsychologistName);
   document.addEventListener("click", onDocumentClickPsychologistName);
 
   const profileCard = document.querySelector(".profile-section .profile-card");
   const psychologistNameEl = document.getElementById("psychologist-name");
+
   if (profileCard) {
+    profileCard.removeEventListener("click", handleProfileCardClick);
     if (isAdminMode && currentUser && currentUser.role === 'admin') {
       profileCard.classList.add("profile-card--editable");
       profileCard.setAttribute("title", "Click para editar perfil");
+      profileCard.addEventListener("click", handleProfileCardClick);
     } else {
       profileCard.classList.remove("profile-card--editable");
       profileCard.removeAttribute("title");
@@ -1999,9 +2011,7 @@ function onDocumentClickPsychologistName(e) {
   const target = e.target;
   const profileSection = document.querySelector(".profile-section");
   if (!profileSection || !profileSection.contains(target)) return;
-  // No abrir modal si hicieron click en el enlace de teléfono (dejar que llame)
   if (target.closest('a[href^="tel:"]')) return;
-  // Cualquier click dentro de la tarjeta de perfil abre el modal
   const profileCard = target.closest(".profile-card");
   if (profileCard) {
     e.preventDefault();

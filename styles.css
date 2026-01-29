@@ -886,6 +886,10 @@ body.dark-theme .auth-helper {
 /* Tarjeta de perfil clickeable en modo admin (editar perfil) */
 .profile-card.profile-card--editable {
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .profile-card.profile-card--editable:hover {
