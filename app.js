@@ -1973,13 +1973,14 @@ function handleProfileCardClick(e) {
   openPsychologistProfileModal();
 }
 
-// Delegación + listener directo en la tarjeta para que el perfil siempre sea clickeable en admin
+// Delegación + listener directo en la tarjeta y en el nombre del header (barra superior)
 function setupPsychologistProfileClick() {
   document.removeEventListener("click", onDocumentClickPsychologistName);
   document.addEventListener("click", onDocumentClickPsychologistName);
 
   const profileCard = document.querySelector(".profile-section .profile-card");
   const psychologistNameEl = document.getElementById("psychologist-name");
+  const userDisplayEl = document.getElementById("user-display"); // "Psicóloga Valentina" en la barra superior (izquierda/superior)
 
   if (profileCard) {
     profileCard.removeEventListener("click", handleProfileCardClick);
@@ -2002,6 +2003,18 @@ function setupPsychologistProfileClick() {
       psychologistNameEl.style.cursor = 'default';
       psychologistNameEl.style.textDecoration = 'none';
       psychologistNameEl.style.color = '';
+    }
+  }
+  // Hacer clickeable "Psicóloga Valentina" en la barra superior (letras blancas)
+  if (userDisplayEl) {
+    userDisplayEl.removeEventListener("click", handleProfileCardClick);
+    if (isAdminMode && currentUser && currentUser.role === 'admin') {
+      userDisplayEl.classList.add("user-display--editable");
+      userDisplayEl.setAttribute("title", "Click para editar perfil");
+      userDisplayEl.addEventListener("click", handleProfileCardClick);
+    } else {
+      userDisplayEl.classList.remove("user-display--editable");
+      userDisplayEl.removeAttribute("title");
     }
   }
 }
