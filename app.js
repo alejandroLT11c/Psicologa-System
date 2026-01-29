@@ -1302,18 +1302,23 @@ function loadPublicProfileFromStorage() {
   }
 }
 
-// Carga el perfil público desde el servidor (o desde localStorage si el API falla). Página de usuario y admin.
+// Carga el perfil público: API + merge con localStorage para no perder datos si el servidor no persiste.
 async function loadPsychologistProfile(retryCount = 0) {
+  var stored = loadPublicProfileFromStorage();
   const maxRetries = 4;
   const retryDelayMs = 5000;
   try {
     const res = await fetch(`${API_BASE}/public/psychologist-profile`, { cache: "no-store" });
     const data = await res.ok ? res.json() : {};
-    const name = (data.name || "Valentina").trim();
-    const apellidos = (data.apellidos != null ? String(data.apellidos) : "Ordoñez Castaño").trim();
-    const phone = (data.phone != null ? String(data.phone) : "").trim();
+    // No sobrescribir con vacío: si el API devuelve teléfono/nombre vacío (ej. BD no persistente), usar lo guardado
+    var name = (data.name != null && String(data.name).trim()) ? String(data.name).trim() : (stored?.name || "Valentina");
+    var apellidos = (data.apellidos != null && String(data.apellidos).trim()) ? String(data.apellidos).trim() : (stored?.apellidos || "Ordoñez Castaño");
+    var phone = (data.phone != null && String(data.phone).trim()) ? String(data.phone).trim() : (stored?.phone || "");
+    name = (name || "Valentina").trim();
+    apellidos = (apellidos || "Ordoñez Castaño").trim();
+    phone = (phone || "").trim();
     renderPsychologistCard(name, apellidos, phone);
-    savePublicProfileToStorage(name, apellidos, phone);
+    if (name || apellidos || phone) savePublicProfileToStorage(name, apellidos, phone);
     return;
   } catch (err) {
     console.error("Error al cargar perfil de la psicóloga:", err);
@@ -1321,9 +1326,9 @@ async function loadPsychologistProfile(retryCount = 0) {
       await new Promise((r) => setTimeout(r, retryDelayMs));
       return loadPsychologistProfile(retryCount + 1);
     }
-    var fallback = loadPublicProfileFromStorage();
-    if (fallback) {
-      renderPsychologistCard(fallback.name, fallback.apellidos, fallback.phone);
+    stored = stored || loadPublicProfileFromStorage();
+    if (stored) {
+      renderPsychologistCard(stored.name, stored.apellidos, stored.phone);
     }
   }
 }
@@ -2027,6 +2032,10 @@ function updatePsychologistDisplay() {
 async function onUserAuthenticated(user, storage = "local") {
   currentUser = user;
   saveUserToStorage(user, storage);
+  if (user.role === "admin" && (user.name || user.phone)) {
+    savePublicProfileToStorage(user.name || "", user.apellidos != null ? user.apellidos : "", user.phone || "");
+    renderPsychologistCard(user.name || "Valentina", user.apellidos != null ? user.apellidos : "Ordoñez Castaño", user.phone || "");
+  }
   hideAuthOverlay();
   updateUserDisplay();
   updatePsychologistDisplay();
