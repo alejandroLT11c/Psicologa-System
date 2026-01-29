@@ -102,7 +102,7 @@ app.get("/api/users", async (req, res) => {
 // Actualizar perfil del administrador (solo admin puede actualizar su propio perfil)
 app.put("/api/users/:userId/profile", async (req, res) => {
   const userId = parseInt(req.params.userId, 10);
-  const { name, phone } = req.body;
+  const { name, apellidos, phone } = req.body;
   
   if (!userId) {
     return res.status(400).json({ error: "ID de usuario inválido." });
@@ -113,7 +113,6 @@ app.put("/api/users/:userId/profile", async (req, res) => {
   }
 
   try {
-    // Verificar que el usuario existe y es admin
     const users = await runQuery("SELECT id, role FROM users WHERE id = ?", [userId]);
     if (users.length === 0) {
       return res.status(404).json({ error: "Usuario no encontrado." });
@@ -124,22 +123,43 @@ app.put("/api/users/:userId/profile", async (req, res) => {
       return res.status(403).json({ error: "Solo los administradores pueden actualizar su perfil." });
     }
 
-    // Actualizar nombre y teléfono
+    const apellidosVal = apellidos != null ? String(apellidos).trim() : "";
     await runExecute(
-      "UPDATE users SET name = ?, phone = ? WHERE id = ?",
-      [name.trim(), phone.trim(), userId]
+      "UPDATE users SET name = ?, apellidos = ?, phone = ? WHERE id = ?",
+      [name.trim(), apellidosVal, phone.trim(), userId]
     );
 
-    // Obtener el usuario actualizado
     const updated = await runQuery(
-      "SELECT id, name, id_number, phone, role FROM users WHERE id = ?",
+      "SELECT id, name, apellidos, id_number, phone, role FROM users WHERE id = ?",
       [userId]
     );
-
-    res.json(updated[0]);
+    const row = updated[0];
+    if (row && row.apellidos == null) row.apellidos = "";
+    res.json(row);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Error al actualizar el perfil." });
+  }
+});
+
+// Perfil público de la psicóloga (para la página de usuario, sin autenticación)
+app.get("/api/public/psychologist-profile", async (req, res) => {
+  try {
+    const rows = await runQuery(
+      "SELECT name, apellidos, phone FROM users WHERE role = 'admin' LIMIT 1"
+    );
+    if (rows.length === 0) {
+      return res.json({ name: "Valentina", apellidos: "Ordoñez Castaño", phone: "" });
+    }
+    const r = rows[0];
+    res.json({
+      name: r.name || "Valentina",
+      apellidos: r.apellidos != null ? r.apellidos : "Ordoñez Castaño",
+      phone: r.phone || "",
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener el perfil." });
   }
 });
 
@@ -296,7 +316,7 @@ app.post("/api/auth/admin-login", async (req, res) => {
 
   try {
     const users = await runQuery(
-      "SELECT id, name, id_number, phone, role, password_hash FROM users WHERE role = 'admin' AND name = ?",
+      "SELECT id, name, apellidos, id_number, phone, role, password_hash FROM users WHERE role = 'admin' AND name = ?",
       [username.trim()]
     );
     const user = users[0];
@@ -305,13 +325,11 @@ app.post("/api/auth/admin-login", async (req, res) => {
       return res.status(401).json({ error: "Credenciales inválidas." });
     }
 
-    // Si no tiene contraseña configurada, usar id_number como contraseña temporal
     if (!user.password_hash) {
       if (password !== user.id_number) {
         return res.status(401).json({ error: "Credenciales inválidas." });
       }
     } else {
-      // Verificar contraseña con bcrypt
       const isValid = await bcrypt.compare(password, user.password_hash);
       if (!isValid) {
         return res.status(401).json({ error: "Credenciales inválidas." });
@@ -321,6 +339,7 @@ app.post("/api/auth/admin-login", async (req, res) => {
     res.json({
       id: user.id,
       name: user.name,
+      apellidos: user.apellidos != null ? user.apellidos : "",
       idNumber: user.id_number,
       phone: user.phone,
       role: user.role,

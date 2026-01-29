@@ -1109,7 +1109,7 @@ function openProfileModal() {
   backdrop.classList.remove("hidden");
 }
 
-// Función específica para editar perfil de la psicóloga (solo admin)
+// Función específica para editar perfil de la psicóloga (solo admin): Nombre, Apellidos, Teléfono
 function openPsychologistProfileModal() {
   if (!isAdminMode || !currentUser || currentUser.role !== 'admin') return;
 
@@ -1127,15 +1127,29 @@ function openPsychologistProfileModal() {
   const nameGroup = document.createElement("div");
   nameGroup.className = "auth-field-group";
   const nameLabel = document.createElement("label");
-  nameLabel.textContent = "Nombre completo";
+  nameLabel.textContent = "Nombre";
   nameLabel.setAttribute("for", "psychologist-name-input");
   const nameInput = document.createElement("input");
   nameInput.id = "psychologist-name-input";
   nameInput.type = "text";
+  nameInput.placeholder = "Ej. Valentina";
   nameInput.value = currentUser.name || "";
   nameInput.required = true;
   nameGroup.appendChild(nameLabel);
   nameGroup.appendChild(nameInput);
+
+  const apellidosGroup = document.createElement("div");
+  apellidosGroup.className = "auth-field-group";
+  const apellidosLabel = document.createElement("label");
+  apellidosLabel.textContent = "Apellidos";
+  apellidosLabel.setAttribute("for", "psychologist-apellidos-input");
+  const apellidosInput = document.createElement("input");
+  apellidosInput.id = "psychologist-apellidos-input";
+  apellidosInput.type = "text";
+  apellidosInput.placeholder = "Ej. Ordoñez Castaño";
+  apellidosInput.value = currentUser.apellidos != null ? currentUser.apellidos : "";
+  apellidosGroup.appendChild(apellidosLabel);
+  apellidosGroup.appendChild(apellidosInput);
 
   const phoneGroup = document.createElement("div");
   phoneGroup.className = "auth-field-group";
@@ -1151,6 +1165,7 @@ function openPsychologistProfileModal() {
   phoneGroup.appendChild(phoneInput);
 
   form.appendChild(nameGroup);
+  form.appendChild(apellidosGroup);
   form.appendChild(phoneGroup);
 
   const actions = document.createElement("div");
@@ -1166,14 +1181,13 @@ function openPsychologistProfileModal() {
   saveBtn.textContent = "Guardar cambios";
   saveBtn.addEventListener("click", async () => {
     const newName = nameInput.value.trim();
+    const newApellidos = apellidosInput.value.trim();
     const newPhone = phoneInput.value.trim();
-    
     if (!newName || !newPhone) {
-      showToast("Nombre completo y número de teléfono son obligatorios.", "error");
+      showToast("Nombre y número de teléfono son obligatorios.", "error");
       return;
     }
-    
-    await updatePsychologistProfile(newName, newPhone);
+    await updatePsychologistProfile(newName, newApellidos, newPhone);
   });
 
   actions.appendChild(cancelBtn);
@@ -1185,7 +1199,7 @@ function openPsychologistProfileModal() {
   backdrop.classList.remove("hidden");
 }
 
-async function updatePsychologistProfile(name, phone) {
+async function updatePsychologistProfile(name, apellidos, phone) {
   if (!currentUser || currentUser.role !== 'admin') return;
   
   try {
@@ -1193,7 +1207,7 @@ async function updatePsychologistProfile(name, phone) {
     const res = await fetch(`${API_BASE}/users/${currentUser.id}/profile`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, phone }),
+      body: JSON.stringify({ name, apellidos: apellidos != null ? apellidos : "", phone }),
     });
     
     const data = await res.json();
@@ -1202,17 +1216,16 @@ async function updatePsychologistProfile(name, phone) {
       return;
     }
 
-    // Actualizar currentUser con los datos que devolvió el servidor
     currentUser.name = data.name;
+    currentUser.apellidos = data.apellidos != null ? data.apellidos : "";
     currentUser.phone = data.phone;
 
-    // Guardar en localStorage/sessionStorage para que al recargar la página siga el cambio
     const storageUsed = localStorage.getItem("psico_user") ? "local" : "session";
     saveUserToStorage(currentUser, storageUsed);
 
-    // Actualizar de inmediato el header (nombre) y la tarjeta de perfil (nombre + teléfono)
     updateUserDisplay();
-    updatePsychologistDisplay();
+    await loadPsychologistProfile();
+    setupPsychologistProfileClick();
     
     showToast("Perfil actualizado correctamente.", "success");
     closeModal();
@@ -1221,6 +1234,41 @@ async function updatePsychologistProfile(name, phone) {
     showToast("Ocurrió un error al actualizar el perfil.", "error");
   } finally {
     hideLoader();
+  }
+}
+
+// Carga el perfil público de la psicóloga y actualiza la tarjeta (nombre, descripción, teléfono). Se usa en página de usuario y tras guardar en admin.
+async function loadPsychologistProfile() {
+  try {
+    const res = await fetch(`${API_BASE}/public/psychologist-profile`);
+    const data = await res.ok ? res.json() : {};
+    const name = (data.name || "Valentina").trim();
+    const apellidos = (data.apellidos != null ? data.apellidos : "Ordoñez Castaño").trim();
+    const phone = (data.phone != null ? data.phone : "").trim();
+    const fullName = [name, apellidos].filter(Boolean).join(" ");
+
+    const psychologistNameEl = document.getElementById("psychologist-name");
+    if (psychologistNameEl) {
+      psychologistNameEl.textContent = name ? `Psicóloga ${name}` : "Psicóloga Valentina";
+    }
+
+    const profileDescEl = document.querySelector(".profile-desc");
+    if (profileDescEl) {
+      const rest = "Mi labor dentro de este círculo es ofrecerte un acompañamiento respetuoso, empático y confidencial, brindándote un espacio donde puedas expresarte con libertad y confianza. Quiero recordarte que este espacio no sustituye procesos terapéuticos, sino que busca ser un apoyo cercano, humano y oportuno cuando sientas la necesidad de hablar y ser escuchado(a).";
+      profileDescEl.textContent = fullName
+        ? `Mi nombre es ${fullName}, psicóloga con enfoque psicosocial, y estaré acompañándote en este espacio de escucha. ${rest}`
+        : `Mi nombre es Valentina Ordoñez Castaño, psicóloga con enfoque psicosocial, y estaré acompañándote en este espacio de escucha. ${rest}`;
+    }
+
+    const profileContact = document.querySelector(".profile-contact");
+    if (profileContact) {
+      const phoneFormatted = phone.replace(/\s/g, "");
+      profileContact.innerHTML = phone
+        ? `Teléfono: <a href="tel:${phoneFormatted}">${phone}</a>`
+        : "Teléfono: —";
+    }
+  } catch (err) {
+    console.error("Error al cargar perfil de la psicóloga:", err);
   }
 }
 
@@ -1784,11 +1832,12 @@ async function init() {
   // Autenticación
   setupAuthUI();
 
-  // Configurar evento para editar perfil de la psicóloga (solo en modo admin)
-  // Usar setTimeout para asegurar que el DOM esté completamente cargado
+  // Cargar perfil de la psicóloga desde el servidor (nombre, apellidos, teléfono) para la tarjeta y la página de usuario
+  await loadPsychologistProfile();
+
   setTimeout(() => {
     setupPsychologistProfileClick();
-  }, 1000);
+  }, 500);
 
   if (isAdminMode) {
     // Modo admin: requiere login
@@ -1906,23 +1955,9 @@ function saveUserToStorage(user, storage) {
 }
 
 function updatePsychologistDisplay() {
-  // Actualizar el nombre y teléfono en la tarjeta de perfil (solo texto, sin función de clic)
+  // La tarjeta de perfil se llena con loadPsychologistProfile(); aquí solo reconfiguramos el clic del header
   if (isAdminMode && currentUser && currentUser.role === 'admin') {
-    const psychologistNameEl = document.getElementById("psychologist-name");
-    if (psychologistNameEl) {
-      // Mostrar solo "Psicóloga Valentina" (evitar "Psicóloga Psicóloga Valentina")
-      const name = (currentUser.name || '').trim();
-      const newText = name ? (name.toLowerCase().startsWith('psicóloga') ? name : `Psicóloga ${name}`) : 'Psicóloga Valentina';
-      if (psychologistNameEl.textContent !== newText) {
-        psychologistNameEl.textContent = newText;
-      }
-      setTimeout(() => setupPsychologistProfileClick(), 100);
-    }
-    const profileContact = document.querySelector(".profile-contact");
-    if (profileContact && currentUser.phone) {
-      const phoneFormatted = currentUser.phone.replace(/\s/g, '');
-      profileContact.innerHTML = `Teléfono: <a href="tel:${phoneFormatted}">${currentUser.phone}</a>`;
-    }
+    setTimeout(() => setupPsychologistProfileClick(), 100);
   }
 }
 
@@ -2176,8 +2211,9 @@ function updateUserDisplay() {
     return;
   }
 
-  // Solo mostrar en modo admin cuando hay usuario autenticado
-  el.textContent = currentUser.name || "Usuario";
+  // En modo admin mostrar "Psicóloga [nombre]"
+  const name = (currentUser.name || "Valentina").trim();
+  el.textContent = name.toLowerCase().startsWith("psicóloga") ? name : `Psicóloga ${name}`;
   el.classList.remove("hidden");
 }
 

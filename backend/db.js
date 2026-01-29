@@ -46,6 +46,13 @@ db.serialize(() => {
     }
   });
 
+  // Apellidos del perfil (nombre = nombre de pila, apellidos = apellidos)
+  db.run("ALTER TABLE users ADD COLUMN apellidos TEXT", (err) => {
+    if (err && !/duplicate column name/i.test(err.message)) {
+      console.error("Error al agregar columna apellidos:", err.message);
+    }
+  });
+
   // Citas
   db.run(`
     CREATE TABLE IF NOT EXISTS appointments (
