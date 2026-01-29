@@ -1229,7 +1229,12 @@ async function updatePsychologistProfile(name, apellidos, phone) {
     saveUserToStorage(currentUser, storageUsed);
 
     updateUserDisplay();
-    await loadPsychologistProfile();
+    // Actualizar la tarjeta de perfil de inmediato con los datos que devolvió el servidor (nombre, apellidos, teléfono)
+    renderPsychologistCard(
+      data.name != null ? data.name : currentUser.name,
+      data.apellidos != null ? data.apellidos : "",
+      data.phone != null ? String(data.phone) : ""
+    );
     setupPsychologistProfileClick();
     
     showToast("Perfil actualizado correctamente.", "success");
@@ -1242,7 +1247,36 @@ async function updatePsychologistProfile(name, apellidos, phone) {
   }
 }
 
-// Carga el perfil público de la psicóloga y actualiza la tarjeta (nombre, descripción, teléfono). Se usa en página de usuario y tras guardar en admin.
+// Actualiza la tarjeta de perfil en el DOM con nombre, apellidos y teléfono (sin hacer petición al servidor).
+function renderPsychologistCard(name, apellidos, phone) {
+  const nameStr = (name != null ? String(name) : "Valentina").trim();
+  const apellidosStr = (apellidos != null ? String(apellidos) : "Ordoñez Castaño").trim();
+  const phoneStr = (phone != null ? String(phone) : "").trim();
+  const fullName = [nameStr, apellidosStr].filter(Boolean).join(" ");
+
+  const psychologistNameEl = document.getElementById("psychologist-name");
+  if (psychologistNameEl) {
+    psychologistNameEl.textContent = nameStr ? `Psicóloga ${nameStr}` : "Psicóloga Valentina";
+  }
+
+  const profileDescEl = document.querySelector(".profile-desc");
+  if (profileDescEl) {
+    const rest = "Mi labor dentro de este círculo es ofrecerte un acompañamiento respetuoso, empático y confidencial, brindándote un espacio donde puedas expresarte con libertad y confianza. Quiero recordarte que este espacio no sustituye procesos terapéuticos, sino que busca ser un apoyo cercano, humano y oportuno cuando sientas la necesidad de hablar y ser escuchado(a).";
+    profileDescEl.textContent = fullName
+      ? `Mi nombre es ${fullName}, psicóloga con enfoque psicosocial, y estaré acompañándote en este espacio de escucha. ${rest}`
+      : `Mi nombre es Valentina Ordoñez Castaño, psicóloga con enfoque psicosocial, y estaré acompañándote en este espacio de escucha. ${rest}`;
+  }
+
+  const profileContact = document.querySelector(".profile-contact");
+  if (profileContact) {
+    const phoneFormatted = phoneStr.replace(/\s/g, "");
+    profileContact.innerHTML = phoneStr
+      ? `Teléfono: <a href="tel:${phoneFormatted}">${phoneStr}</a>`
+      : "Teléfono: —";
+  }
+}
+
+// Carga el perfil público de la psicóloga desde el servidor y actualiza la tarjeta.
 async function loadPsychologistProfile() {
   try {
     const res = await fetch(`${API_BASE}/public/psychologist-profile`);
@@ -1250,28 +1284,7 @@ async function loadPsychologistProfile() {
     const name = (data.name || "Valentina").trim();
     const apellidos = (data.apellidos != null ? String(data.apellidos) : "Ordoñez Castaño").trim();
     const phone = (data.phone != null ? String(data.phone) : "").trim();
-    const fullName = [name, apellidos].filter(Boolean).join(" ");
-
-    const psychologistNameEl = document.getElementById("psychologist-name");
-    if (psychologistNameEl) {
-      psychologistNameEl.textContent = name ? `Psicóloga ${name}` : "Psicóloga Valentina";
-    }
-
-    const profileDescEl = document.querySelector(".profile-desc");
-    if (profileDescEl) {
-      const rest = "Mi labor dentro de este círculo es ofrecerte un acompañamiento respetuoso, empático y confidencial, brindándote un espacio donde puedas expresarte con libertad y confianza. Quiero recordarte que este espacio no sustituye procesos terapéuticos, sino que busca ser un apoyo cercano, humano y oportuno cuando sientas la necesidad de hablar y ser escuchado(a).";
-      profileDescEl.textContent = fullName
-        ? `Mi nombre es ${fullName}, psicóloga con enfoque psicosocial, y estaré acompañándote en este espacio de escucha. ${rest}`
-        : `Mi nombre es Valentina Ordoñez Castaño, psicóloga con enfoque psicosocial, y estaré acompañándote en este espacio de escucha. ${rest}`;
-    }
-
-    const profileContact = document.querySelector(".profile-contact");
-    if (profileContact) {
-      const phoneFormatted = phone.replace(/\s/g, "");
-      profileContact.innerHTML = phone
-        ? `Teléfono: <a href="tel:${phoneFormatted}">${phone}</a>`
-        : "Teléfono: —";
-    }
+    renderPsychologistCard(name, apellidos, phone);
   } catch (err) {
     console.error("Error al cargar perfil de la psicóloga:", err);
   }
