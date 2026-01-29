@@ -1276,8 +1276,9 @@ function renderPsychologistCard(name, apellidos, phone) {
   }
 }
 
-// Carga el perfil público de la psicóloga desde el servidor y actualiza la tarjeta.
-async function loadPsychologistProfile() {
+// Carga el perfil público de la psicóloga desde el servidor y actualiza la tarjeta (página de usuario y admin).
+async function loadPsychologistProfile(retryCount = 0) {
+  const maxRetries = 2;
   try {
     const res = await fetch(`${API_BASE}/public/psychologist-profile`);
     const data = await res.ok ? res.json() : {};
@@ -1287,6 +1288,10 @@ async function loadPsychologistProfile() {
     renderPsychologistCard(name, apellidos, phone);
   } catch (err) {
     console.error("Error al cargar perfil de la psicóloga:", err);
+    if (retryCount < maxRetries) {
+      await new Promise((r) => setTimeout(r, 2500));
+      return loadPsychologistProfile(retryCount + 1);
+    }
   }
 }
 
@@ -1880,9 +1885,10 @@ async function init() {
     // Si no hay admin autenticado, mostrar overlay de login
     showAuthOverlay();
   } else {
-    // Modo usuario: sin login, cargar directamente
+    // Modo usuario: sin login, cargar datos y perfil de la psicóloga para que se vean los cambios
     hideAuthOverlay();
     await loadAllData();
+    await loadPsychologistProfile();
   }
   
   renderCalendar();

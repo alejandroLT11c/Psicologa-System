@@ -6,7 +6,17 @@ const db = require("./db");
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(cors());
+// CORS: permitir peticiones desde el frontend (página de usuario y admin en Render y local)
+app.use(cors({
+  origin: [
+    "https://psicologa-system.onrender.com",
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+  ],
+  credentials: false,
+}));
 app.use(express.json());
 
 // Utilidad para ejecutar consultas con promesas
