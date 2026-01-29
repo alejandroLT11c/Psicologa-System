@@ -1229,12 +1229,11 @@ async function updatePsychologistProfile(name, apellidos, phone) {
     saveUserToStorage(currentUser, storageUsed);
 
     updateUserDisplay();
-    // Actualizar la tarjeta de perfil de inmediato con los datos que devolvió el servidor (nombre, apellidos, teléfono)
-    renderPsychologistCard(
-      data.name != null ? data.name : currentUser.name,
-      data.apellidos != null ? data.apellidos : "",
-      data.phone != null ? String(data.phone) : ""
-    );
+    var savedName = data.name != null ? data.name : currentUser.name;
+    var savedApellidos = data.apellidos != null ? data.apellidos : "";
+    var savedPhone = data.phone != null ? String(data.phone) : "";
+    renderPsychologistCard(savedName, savedApellidos, savedPhone);
+    savePublicProfileToStorage(savedName, savedApellidos, savedPhone);
     setupPsychologistProfileClick();
     
     showToast("Perfil actualizado correctamente.", "success");
@@ -1276,21 +1275,55 @@ function renderPsychologistCard(name, apellidos, phone) {
   }
 }
 
-// Carga el perfil público de la psicóloga desde el servidor y actualiza la tarjeta (página de usuario y admin).
-async function loadPsychologistProfile(retryCount = 0) {
-  const maxRetries = 2;
+const STORAGE_KEY_PUBLIC_PROFILE = "psico_public_profile";
+
+function savePublicProfileToStorage(name, apellidos, phone) {
   try {
-    const res = await fetch(`${API_BASE}/public/psychologist-profile`);
+    localStorage.setItem(STORAGE_KEY_PUBLIC_PROFILE, JSON.stringify({
+      name: name != null ? String(name).trim() : "",
+      apellidos: apellidos != null ? String(apellidos).trim() : "",
+      phone: phone != null ? String(phone).trim() : "",
+    }));
+  } catch (e) {}
+}
+
+function loadPublicProfileFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_PUBLIC_PROFILE);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return {
+      name: (data.name || "Valentina").trim(),
+      apellidos: (data.apellidos != null ? String(data.apellidos) : "Ordoñez Castaño").trim(),
+      phone: (data.phone != null ? String(data.phone) : "").trim(),
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+// Carga el perfil público desde el servidor (o desde localStorage si el API falla). Página de usuario y admin.
+async function loadPsychologistProfile(retryCount = 0) {
+  const maxRetries = 4;
+  const retryDelayMs = 5000;
+  try {
+    const res = await fetch(`${API_BASE}/public/psychologist-profile`, { cache: "no-store" });
     const data = await res.ok ? res.json() : {};
     const name = (data.name || "Valentina").trim();
     const apellidos = (data.apellidos != null ? String(data.apellidos) : "Ordoñez Castaño").trim();
     const phone = (data.phone != null ? String(data.phone) : "").trim();
     renderPsychologistCard(name, apellidos, phone);
+    savePublicProfileToStorage(name, apellidos, phone);
+    return;
   } catch (err) {
     console.error("Error al cargar perfil de la psicóloga:", err);
     if (retryCount < maxRetries) {
-      await new Promise((r) => setTimeout(r, 2500));
+      await new Promise((r) => setTimeout(r, retryDelayMs));
       return loadPsychologistProfile(retryCount + 1);
+    }
+    var fallback = loadPublicProfileFromStorage();
+    if (fallback) {
+      renderPsychologistCard(fallback.name, fallback.apellidos, fallback.phone);
     }
   }
 }
@@ -1885,7 +1918,11 @@ async function init() {
     // Si no hay admin autenticado, mostrar overlay de login
     showAuthOverlay();
   } else {
-    // Modo usuario: sin login, cargar datos y perfil de la psicóloga para que se vean los cambios
+    // Modo usuario: mostrar perfil desde localStorage de inmediato (por si el API tarda o falla) y luego cargar desde el servidor
+    var storedProfile = loadPublicProfileFromStorage();
+    if (storedProfile) {
+      renderPsychologistCard(storedProfile.name, storedProfile.apellidos, storedProfile.phone);
+    }
     hideAuthOverlay();
     await loadAllData();
     await loadPsychologistProfile();
