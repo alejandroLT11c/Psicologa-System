@@ -1574,7 +1574,7 @@ function openConfirmModal(isoDate, time) {
     const nameGroup = document.createElement("div");
     nameGroup.className = "auth-field-group";
     const nameLabel = document.createElement("label");
-    nameLabel.textContent = "Nombre completo";
+    nameLabel.textContent = "Nombre y apellido";
     nameLabel.setAttribute("for", "appointment-name");
     nameInput = document.createElement("input");
     nameInput.id = "appointment-name";
@@ -1616,8 +1616,8 @@ function openConfirmModal(isoDate, time) {
     if (!isAdminMode) {
       const patientName = nameInput.value.trim();
       const patientPhone = phoneInput.value.trim();
-      if (!patientName || !patientPhone) {
-        showToast("Nombre completo y número de celular son obligatorios.", "error");
+        if (!patientName || !patientPhone) {
+          showToast("Nombre y apellido y número de celular son obligatorios.", "error");
         return;
       }
       const note = textarea.value.trim();
