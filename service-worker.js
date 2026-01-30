@@ -37,16 +37,17 @@ self.addEventListener('activate', (event) => {
 });
 
 // Estrategia: Network First, luego Cache
+// No interceptar peticiones al backend: dejarlas pasar para evitar errores CORS en consola
+const API_HOST = 'psicologa-backend.onrender.com';
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
-  // Las peticiones al API siempre van a la red (no cachear)
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(event.request));
+  // No tocar peticiones al API (cross-origin): el navegador las hace desde la página y CORS funciona bien
+  if (url.hostname === API_HOST) {
     return;
   }
   
-  // Para otros recursos, usar Network First
+  // Para otros recursos (mismo origen), usar Network First
   event.respondWith(
     fetch(event.request)
       .then((response) => {
