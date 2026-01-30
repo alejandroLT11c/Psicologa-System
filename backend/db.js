@@ -141,8 +141,19 @@ db.serialize(() => {
     WHERE id = 2 AND role = 'admin'
   `
   );
+
+  // Señal de que las tablas están listas (evita 500 en la primera petición)
+  db.run("SELECT 1", (err) => {
+    if (err) console.error("DB init:", err);
+    else console.log("Base de datos inicializada.");
+    if (dbReadyResolve) dbReadyResolve();
+  });
 });
 
+let dbReadyResolve;
+const dbReady = new Promise((resolve) => { dbReadyResolve = resolve; });
+
 module.exports = db;
+module.exports.dbReady = dbReady;
 
 

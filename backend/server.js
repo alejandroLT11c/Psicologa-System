@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
+const { dbReady } = require("./db");
 const db = require("./db");
 
 const app = express();
@@ -663,7 +664,10 @@ app.post("/api/appointments", async (req, res) => {
     res.status(201).json(newAppointment);
   } catch (err) {
     console.error("Error al crear la cita:", err.message);
-    res.status(500).json({ error: "Error al crear la cita" });
+    const msg = process.env.NODE_ENV === "production"
+      ? "Error al crear la cita"
+      : `Error al crear la cita: ${err.message}`;
+    res.status(500).json({ error: msg });
   }
 });
 
@@ -849,8 +853,13 @@ app.delete("/api/disabled-hours", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor API escuchando en http://localhost:${PORT}`);
+db.dbReady.then(() => {
+  app.listen(PORT, () => {
+    console.log(`Servidor API escuchando en http://localhost:${PORT}`);
+  });
+}).catch((err) => {
+  console.error("No se pudo iniciar la base de datos:", err);
+  process.exit(1);
 });
 
 
