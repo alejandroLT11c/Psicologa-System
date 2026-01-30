@@ -92,6 +92,73 @@ db.serialize(() => {
     }
   });
 
+  // Migración: permitir user_id NULL (citas de usuarios anónimos desde la página pública)
+  db.all("PRAGMA table_info(appointments)", (err, rows) => {
+    const done = () => {
+      db.run("SELECT 1", (e) => {
+        if (e) console.error("DB init:", e);
+        else console.log("Base de datos inicializada.");
+        if (dbReadyResolve) dbReadyResolve();
+      });
+    };
+    if (err) {
+      done();
+      return;
+    }
+    const userIdCol = rows && rows.find((r) => r.name === "user_id");
+    if (!userIdCol || userIdCol.notnull !== 1) {
+      done();
+      return;
+    }
+    db.run(
+      `CREATE TABLE appointments_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        device_id TEXT,
+        patient_name TEXT NOT NULL,
+        patient_phone TEXT NOT NULL,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL,
+        status TEXT NOT NULL,
+        user_note TEXT,
+        admin_note TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )`,
+      (err2) => {
+        if (err2) {
+          console.error("Migración appointments (create):", err2.message);
+          done();
+          return;
+        }
+        db.run(
+          `INSERT INTO appointments_new (id, user_id, device_id, patient_name, patient_phone, date, time, status, user_note, admin_note, created_at, updated_at)
+           SELECT id, user_id, device_id, patient_name, patient_phone, date, time, status, user_note, admin_note, created_at, updated_at FROM appointments`,
+          (err3) => {
+            if (err3) {
+              console.error("Migración appointments (copy):", err3.message);
+              done();
+              return;
+            }
+            db.run("DROP TABLE appointments", (err4) => {
+              if (err4) {
+                console.error("Migración appointments (drop):", err4.message);
+                done();
+                return;
+              }
+              db.run("ALTER TABLE appointments_new RENAME TO appointments", (err5) => {
+                if (err5) console.error("Migración appointments (rename):", err5.message);
+                else console.log("Migración: appointments.user_id ahora permite NULL.");
+                done();
+              });
+            });
+          }
+        );
+      }
+    );
+  });
+
   // Días deshabilitados
   db.run(`
     CREATE TABLE IF NOT EXISTS disabled_days (
@@ -142,12 +209,7 @@ db.serialize(() => {
   `
   );
 
-  // Señal de que las tablas están listas (evita 500 en la primera petición)
-  db.run("SELECT 1", (err) => {
-    if (err) console.error("DB init:", err);
-    else console.log("Base de datos inicializada.");
-    if (dbReadyResolve) dbReadyResolve();
-  });
+  // dbReady se resuelve desde la migración de appointments (db.all más arriba)
 });
 
 let dbReadyResolve;
