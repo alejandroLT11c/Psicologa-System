@@ -38,6 +38,8 @@ let deviceId = !isAdminMode ? getOrCreateDeviceId() : null;
 // Citas guardadas en memoria
 // { id, date: 'YYYY-MM-DD', time: 'HH:MM', userId, userName, status }
 const appointments = [];
+// En modo usuario: horarios tomados por CUALQUIERA (para que incógnito/otro dispositivo no vea disponible lo ya reservado)
+const allTakenSlots = new Set(); // entradas "YYYY-MM-DD|HH:MM"
 
 // Días deshabilitados por la psicóloga (strings 'YYYY-MM-DD')
 const disabledDays = new Set();
@@ -107,8 +109,10 @@ function getAppointmentsForDay(isoDate) {
 }
 
 function isTimeTaken(isoDate, time) {
-  // En modo usuario, mostrar como ocupado si CUALQUIERA tiene una cita (no solo el dispositivo)
-  // En modo admin, mostrar todas las citas
+  const key = `${isoDate}|${time}`;
+  if (!isAdminMode) {
+    return allTakenSlots.has(key);
+  }
   return appointments.some(
     (a) =>
       a.date === isoDate &&
@@ -152,44 +156,70 @@ function addNotification(userId, message, type) {
 
 async function loadUserAppointments() {
   try {
-    let res;
-    if (isAdminMode && currentUser) {
-      // Modo admin: cargar todas las citas
-      res = await fetch(`${API_BASE}/appointments-all`);
-    } else if (!isAdminMode && deviceId) {
-      // Modo usuario: cargar solo citas del dispositivo
-      res = await fetch(`${API_BASE}/appointments-by-device?deviceId=${encodeURIComponent(deviceId)}`);
-    } else {
-      return; // No hay modo válido
-    }
-    
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Error al cargar citas");
+    if (!isAdminMode && deviceId) {
+      // Modo usuario: citas del dispositivo (para "Mis citas") + todas las citas (para marcar horarios ocupados en incógnito/otro dispositivo)
+      const [resDevice, resAll] = await Promise.all([
+        fetch(`${API_BASE}/appointments-by-device?deviceId=${encodeURIComponent(deviceId)}`),
+        fetch(`${API_BASE}/appointments-all`),
+      ]);
+      const dataDevice = await resDevice.json();
+      const dataAll = await resAll.json();
+      if (!resDevice.ok) throw new Error(dataDevice.error || "Error al cargar citas");
 
-    appointments.length = 0;
-    data.forEach((row) => {
-      // Ocultar completamente el usuario de ejemplo (id = 1) para todos
-      if (row.user_id === 1) {
-        return;
-      }
-
-      const userName = row.patient_name || row.userName || row.username || row.name || "Paciente";
-      const userPhone = row.patient_phone || row.userPhone || row.user_phone || "";
-      const userIdNumber = row.userIdNumber || row.idNumber || "";
-
-      appointments.push({
-        id: row.id,
-        date: row.date,
-        time: row.time,
-        userId: row.user_id || null,
-        deviceId: row.device_id || null,
-        userName,
-        userIdNumber,
-        userPhone,
-        userNote: row.user_note || "",
-        status: row.status,
+      appointments.length = 0;
+      dataDevice.forEach((row) => {
+        if (row.user_id === 1) return;
+        const userName = row.patient_name || row.userName || row.username || row.name || "Paciente";
+        const userPhone = row.patient_phone || row.userPhone || row.user_phone || "";
+        const userIdNumber = row.userIdNumber || row.idNumber || "";
+        appointments.push({
+          id: row.id,
+          date: row.date,
+          time: row.time,
+          userId: row.user_id || null,
+          deviceId: row.device_id || null,
+          userName,
+          userIdNumber,
+          userPhone,
+          userNote: row.user_note || "",
+          status: row.status,
+        });
       });
-    });
+
+      allTakenSlots.clear();
+      dataAll.forEach((row) => {
+        if (row.status !== "pending" && row.status !== "confirmed") return;
+        allTakenSlots.add(`${row.date}|${row.time}`);
+      });
+
+      return;
+    }
+
+    if (isAdminMode && currentUser) {
+      const res = await fetch(`${API_BASE}/appointments-all`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al cargar citas");
+      allTakenSlots.clear();
+      appointments.length = 0;
+      data.forEach((row) => {
+        if (row.user_id === 1) return;
+        const userName = row.patient_name || row.userName || row.username || row.name || "Paciente";
+        const userPhone = row.patient_phone || row.userPhone || row.user_phone || "";
+        const userIdNumber = row.userIdNumber || row.idNumber || "";
+        appointments.push({
+          id: row.id,
+          date: row.date,
+          time: row.time,
+          userId: row.user_id || null,
+          deviceId: row.device_id || null,
+          userName,
+          userIdNumber,
+          userPhone,
+          userNote: row.user_note || "",
+          status: row.status,
+        });
+      });
+    }
   } catch (err) {
     console.error("Error al cargar citas:", err);
   }
@@ -559,35 +589,43 @@ function renderCalendar() {
     dayNumber.textContent = day.toString();
     cell.appendChild(dayNumber);
 
-    // Determinar el estado de las citas para cambiar el color del corazón
+    // Determinar el estado de las citas (admin: todas; usuario: solo las suyas)
     const allApps = getAppointmentsForDay(iso);
     let apps;
     if (isAdminMode && currentUser && currentUser.role === "admin") {
-      // Modo admin: mostrar todas las citas
       apps = allApps;
     } else if (!isAdminMode && deviceId) {
-      // Modo usuario: mostrar solo citas del dispositivo
       apps = allApps.filter((a) => a.deviceId === deviceId);
     } else {
       apps = [];
     }
-    
-    // Si hay citas, determinar el color según el estado
-    if (apps.length > 0) {
-      const hasPending = apps.some((a) => a.status === "pending");
-      const hasConfirmed = apps.some((a) => a.status === "confirmed");
-      const hasCancelled = apps.some((a) => a.status === "cancelled" || a.status === "rejected");
-      
+
+    const hasPending = apps.some((a) => a.status === "pending");
+    const hasConfirmed = apps.some((a) => a.status === "confirmed");
+    const hasCancelled = apps.some((a) => a.status === "cancelled" || a.status === "rejected");
+
+    // Puntito en el día: amarillo = pendiente, verde = confirmada; si solo canceladas/rechazadas, no puntito
+    if (apps.length > 0 && (hasPending || hasConfirmed)) {
+      const dot = document.createElement("span");
+      dot.className = "day-dot";
       if (hasConfirmed) {
-        cell.classList.add("heart-confirmed"); // Verde
+        dot.classList.add("dot-confirmed");
       } else if (hasPending) {
-        cell.classList.add("heart-pending"); // Amarillo
+        dot.classList.add("dot-pending");
+      }
+      cell.appendChild(dot);
+    }
+
+    // Color del corazón (opcional, se mantiene por compatibilidad)
+    if (apps.length > 0) {
+      if (hasConfirmed) {
+        cell.classList.add("heart-confirmed");
+      } else if (hasPending) {
+        cell.classList.add("heart-pending");
       } else if (hasCancelled) {
-        // Canceladas vuelven a rosa claro (sin clase adicional)
         cell.classList.remove("heart-pending", "heart-confirmed");
       }
     } else {
-      // Sin citas = rosa claro (sin clases de color)
       cell.classList.remove("heart-pending", "heart-confirmed");
     }
 
@@ -1001,11 +1039,6 @@ function openAppointmentDetailsModal(appointment) {
   const pUser = document.createElement("p");
   pUser.innerHTML = `<strong>Nombre completo:</strong> ${appointment.userName}`;
 
-  const pIdNumber = document.createElement("p");
-  pIdNumber.innerHTML = `<strong>Número de identificación:</strong> ${
-    appointment.userIdNumber || "No registrado"
-  }`;
-
   const pPhone = document.createElement("p");
   pPhone.innerHTML = `<strong>Teléfono:</strong> ${
     appointment.userPhone || "No registrado"
@@ -1013,7 +1046,6 @@ function openAppointmentDetailsModal(appointment) {
 
   body.appendChild(pDate);
   body.appendChild(pUser);
-  body.appendChild(pIdNumber);
   body.appendChild(pPhone);
 
   if (appointment.userNote && appointment.userNote.trim()) {
@@ -1850,15 +1882,6 @@ async function init() {
       openDisableDayModal(iso);
     }
   });
-
-  const manageUsersBtn = document.getElementById("manage-users-btn");
-  if (manageUsersBtn) {
-    manageUsersBtn.addEventListener("click", () => {
-      if (currentUser?.role === "admin") {
-        openManageUsersModal();
-      }
-    });
-  }
 
   // Tema (claro / oscuro)
   const themeButtons = document.querySelectorAll(".theme-toggle");

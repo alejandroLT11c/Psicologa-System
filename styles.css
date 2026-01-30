@@ -1180,6 +1180,24 @@ ESTILOS DE CORAZONES (Actualizado)
   font-weight: 600;
 }
 
+/* Puntito en el día: indica si hay cita pendiente (amarillo) o confirmada (verde) */
+.calendar-heart .day-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  z-index: 6;
+  pointer-events: none;
+}
+.calendar-heart .day-dot.dot-pending {
+  background-color: #eab308;
+}
+.calendar-heart .day-dot.dot-confirmed {
+  background-color: #22c55e;
+}
+
 .calendar-heart.today::before {
   background-color: var(--coop-blue);
   opacity: 1;
