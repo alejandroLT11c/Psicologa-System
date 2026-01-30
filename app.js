@@ -241,6 +241,23 @@ async function loadAllData() {
   }
 }
 
+async function loadPatientDeviceNotifications() {
+  try {
+    if (!deviceId) return;
+    const res = await fetch(`${API_BASE}/notifications-by-device?deviceId=${encodeURIComponent(deviceId)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Error al cargar notificaciones");
+    patientDeviceNotifications = (data || []).map((row) => ({
+      date: row.created_at,
+      message: row.message,
+      type: row.type,
+    }));
+  } catch (err) {
+    console.error(err);
+    patientDeviceNotifications = [];
+  }
+}
+
 async function loadNotifications() {
   try {
     if (!currentUser) return;
