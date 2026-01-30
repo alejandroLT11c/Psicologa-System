@@ -327,7 +327,8 @@ async function scheduleAppointment(isoDate, time, user, userNote, patientName, p
     });
     const data = await res.json();
     if (!res.ok) {
-      showToast(data.error || "No se pudo crear la cita.", "error");
+      const msg = data.errorDetail || data.error || "No se pudo crear la cita.";
+      showToast(msg, "error");
       return;
     }
 

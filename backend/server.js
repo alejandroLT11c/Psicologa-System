@@ -664,10 +664,10 @@ app.post("/api/appointments", async (req, res) => {
     res.status(201).json(newAppointment);
   } catch (err) {
     console.error("Error al crear la cita:", err.message);
-    const msg = process.env.NODE_ENV === "production"
-      ? "Error al crear la cita"
-      : `Error al crear la cita: ${err.message}`;
-    res.status(500).json({ error: msg });
+    res.status(500).json({
+      error: "Error al crear la cita",
+      errorDetail: err.message,
+    });
   }
 });
 
