@@ -779,10 +779,28 @@ function renderPatientNotifications() {
   const container = document.getElementById("patient-notifications");
   if (!container) return;
 
-  // Modo usuario (por dispositivo): notificaciones de confirmación/rechazo
-  const list = !isAdminMode && deviceId
-    ? patientDeviceNotifications
-    : (currentUser ? notifications[currentUser.id] || [] : []);
+  let list;
+  if (!isAdminMode && deviceId) {
+    list = patientDeviceNotifications.slice();
+    // Fallback: mostrar también citas confirmadas/rechazadas de "Mis citas" por si el backend no creó notificación (rechazo/confirmación anterior al deploy)
+    const myAppointments = appointments.filter((a) => a.deviceId === deviceId && (a.status === "confirmed" || a.status === "rejected"));
+    myAppointments.forEach((appt) => {
+      const msg = appt.status === "confirmed"
+        ? `Tu cita para el ${appt.date} a las ${appt.time} fue confirmada.`
+        : `Tu cita para el ${appt.date} a las ${appt.time} fue rechazada.`;
+      const already = list.some((n) => n.message === msg);
+      if (!already) {
+        list.push({
+          date: appt.date,
+          message: msg,
+          type: appt.status === "confirmed" ? "confirmacion" : "rechazo",
+        });
+      }
+    });
+    list.sort((a, b) => new Date(b.date) - new Date(a.date));
+  } else {
+    list = currentUser ? notifications[currentUser.id] || [] : [];
+  }
   container.innerHTML = "";
 
   if (list.length === 0) {
