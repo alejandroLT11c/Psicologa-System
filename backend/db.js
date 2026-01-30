@@ -190,6 +190,17 @@ db.serialize(() => {
     )
   `);
 
+  // Notificaciones por dispositivo (usuarios sin cuenta: confirmación/rechazo de cita)
+  db.run(`
+    CREATE TABLE IF NOT EXISTS device_notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      device_id TEXT NOT NULL,
+      type TEXT NOT NULL,
+      message TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // Crear usuarios base: ejemplo y psicóloga
   db.run(
     `

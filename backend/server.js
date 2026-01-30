@@ -50,6 +50,17 @@ async function createNotification(userId, type, message) {
   );
 }
 
+async function createDeviceNotification(deviceId, type, message) {
+  if (!deviceId || !type || !message) return;
+  await runExecute(
+    `
+    INSERT INTO device_notifications (device_id, type, message)
+    VALUES (?, ?, ?)
+  `,
+    [deviceId, type, message]
+  );
+}
+
 // ---- Autenticación ----
 
 // Crear usuario (solo para admin/psicóloga)
@@ -431,6 +442,30 @@ app.get("/api/users/:userId/appointments", async (req, res) => {
   }
 });
 
+// Obtener notificaciones por dispositivo (usuarios sin cuenta: confirmación/rechazo de cita)
+app.get("/api/notifications-by-device", async (req, res) => {
+  const { deviceId } = req.query;
+  if (!deviceId) {
+    return res.status(400).json({ error: "Falta deviceId" });
+  }
+  try {
+    const rows = await runQuery(
+      `
+      SELECT *
+      FROM device_notifications
+      WHERE device_id = ?
+        AND datetime(created_at) >= datetime('now', '-30 days')
+      ORDER BY datetime(created_at) DESC
+      `,
+      [deviceId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Error al obtener notificaciones" });
+  }
+});
+
 // Obtener notificaciones de un usuario
 app.get("/api/users/:userId/notifications", async (req, res) => {
   const userId = parseInt(req.params.userId, 10);
@@ -699,10 +734,12 @@ app.put("/api/appointments/:id/status", async (req, res) => {
         if (adminNote && adminNote.trim()) {
           message += ` Nota de la psicóloga: ${adminNote.trim()}`;
         }
-        await createNotification(appt.user_id, "rechazo", message);
+        if (appt.user_id) await createNotification(appt.user_id, "rechazo", message);
+        if (appt.device_id) await createDeviceNotification(appt.device_id, "rechazo", message);
       } else if (status === "confirmed") {
         const message = `Tu cita para el ${appt.date} a las ${appt.time} fue confirmada.`;
-        await createNotification(appt.user_id, "confirmacion", message);
+        if (appt.user_id) await createNotification(appt.user_id, "confirmacion", message);
+        if (appt.device_id) await createDeviceNotification(appt.device_id, "confirmacion", message);
       } else if (status === "cancelled" && src === "user") {
         const message = `El usuario canceló la cita programada para el ${appt.date} a las ${appt.time}.`;
         // Enviamos notificación a la psicóloga (id=2)

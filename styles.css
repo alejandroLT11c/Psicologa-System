@@ -2135,16 +2135,21 @@ body.dark-theme #welcome-admin {
     grid-template-columns: 1fr;
   }
 
+  /* Mantener header en una sola fila: logo a la izquierda, botones (actualizar/tema) en la esquina superior derecha */
   .top-bar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.35rem;
-    padding: 0.75rem 1rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    flex-wrap: nowrap;
   }
 
   .top-actions {
-    width: 100%;
-    justify-content: space-between;
+    width: auto;
+    flex-shrink: 0;
+    margin-left: auto;
+    justify-content: flex-end;
   }
 
   .role-switch {

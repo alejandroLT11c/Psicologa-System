@@ -48,6 +48,8 @@ const disabledHoursByDay = {};
 
 // Notificaciones para usuarios: { [userId]: [{ date, message, type }] }
 const notifications = {};
+// Notificaciones por dispositivo (vista usuario sin cuenta: confirmación/rechazo de cita)
+let patientDeviceNotifications = [];
 
 // Utilidades de fecha
 function toISODate(date) {
@@ -232,9 +234,10 @@ async function loadAllData() {
     loadDisabledDays(),
     loadUserAppointments(),
   ]);
-  // Las notificaciones solo se cargan en modo admin
   if (isAdminMode && currentUser) {
     await loadNotifications();
+  } else if (!isAdminMode && deviceId) {
+    await loadPatientDeviceNotifications();
   }
 }
 
@@ -393,13 +396,9 @@ async function scheduleAppointment(isoDate, time, user, userNote, patientName, p
       // Si es usuario, renderizar sus paneles
       renderPatientAppointments();
       renderPatientTimeSlots();
-      if (!isAdminMode) {
-        // Las notificaciones no se muestran en modo usuario
-        const notiContainer = document.getElementById("patient-notifications");
-        if (notiContainer) {
-          notiContainer.innerHTML = "Aquí verás las novedades de tus citas.";
-          notiContainer.classList.add("empty");
-        }
+      if (!isAdminMode && deviceId) {
+        await loadPatientDeviceNotifications();
+        renderPatientNotifications();
       }
     }
     
@@ -763,7 +762,10 @@ function renderPatientNotifications() {
   const container = document.getElementById("patient-notifications");
   if (!container) return;
 
-  const list = currentUser ? notifications[currentUser.id] || [] : [];
+  // Modo usuario (por dispositivo): notificaciones de confirmación/rechazo
+  const list = !isAdminMode && deviceId
+    ? patientDeviceNotifications
+    : (currentUser ? notifications[currentUser.id] || [] : []);
   container.innerHTML = "";
 
   if (list.length === 0) {
@@ -1868,6 +1870,7 @@ async function init() {
         } else {
           renderPatientAppointments();
           renderPatientTimeSlots();
+          renderPatientNotifications();
         }
         showToast("Datos actualizados.", "success");
       } catch (e) {
@@ -1890,6 +1893,7 @@ async function init() {
       } else {
         renderPatientAppointments();
         renderPatientTimeSlots();
+        renderPatientNotifications();
       }
     } catch (_) {}
   }, 60000);
@@ -2404,7 +2408,11 @@ async function cancelAppointmentByUser(appointmentId, note) {
       return;
     }
 
-    await Promise.all([loadUserAppointments(), loadNotifications()]);
+    if (isAdminMode) {
+      await Promise.all([loadUserAppointments(), loadNotifications()]);
+    } else {
+      await Promise.all([loadUserAppointments(), loadPatientDeviceNotifications()]);
+    }
 
     renderCalendar();
     renderPatientAppointments();
