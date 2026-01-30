@@ -583,13 +583,13 @@ app.post("/api/appointments", async (req, res) => {
       return res.status(400).json({ error: "Esa hora está deshabilitada" });
     }
 
-    // Evitar que dos usuarios tomen el mismo horario
+    // Evitar que dos usuarios tomen el mismo horario (incl. rechazadas/canceladas: el horario sigue no disponible)
     const existing = await runQuery(
       `
       SELECT id FROM appointments
       WHERE date = ?
         AND time = ?
-        AND status IN ('pending', 'confirmed')
+        AND status IN ('pending', 'confirmed', 'rejected', 'cancelled')
     `,
       [date, time]
     );

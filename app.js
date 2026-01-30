@@ -117,7 +117,7 @@ function isTimeTaken(isoDate, time) {
     (a) =>
       a.date === isoDate &&
       a.time === time &&
-      (a.status === "pending" || a.status === "confirmed")
+      ["pending", "confirmed", "rejected", "cancelled"].includes(a.status)
   );
 }
 
@@ -188,7 +188,8 @@ async function loadUserAppointments() {
 
       allTakenSlots.clear();
       dataAll.forEach((row) => {
-        if (row.status !== "pending" && row.status !== "confirmed") return;
+        // Incluir rechazadas y canceladas para que el horario siga no disponible
+        if (!["pending", "confirmed", "rejected", "cancelled"].includes(row.status)) return;
         allTakenSlots.add(`${row.date}|${row.time}`);
       });
 
@@ -1855,10 +1856,43 @@ async function init() {
 
   const refreshBtn = document.getElementById("refresh-btn");
   if (refreshBtn) {
-    refreshBtn.addEventListener("click", () => {
-      window.location.reload();
+    refreshBtn.addEventListener("click", async () => {
+      try {
+        refreshBtn.disabled = true;
+        await loadAllData();
+        renderCalendar();
+        if (isAdminMode && currentUser?.role === "admin") {
+          renderAdminAppointments();
+          renderAdminNotifications();
+          renderAdminTimeSlots();
+        } else {
+          renderPatientAppointments();
+          renderPatientTimeSlots();
+        }
+        showToast("Datos actualizados.", "success");
+      } catch (e) {
+        showToast("Error al actualizar.", "error");
+      } finally {
+        refreshBtn.disabled = false;
+      }
     });
   }
+
+  // Renovar datos automáticamente cada 60 segundos (sin recargar la página)
+  setInterval(async () => {
+    try {
+      await loadAllData();
+      renderCalendar();
+      if (isAdminMode && currentUser?.role === "admin") {
+        renderAdminAppointments();
+        renderAdminNotifications();
+        renderAdminTimeSlots();
+      } else {
+        renderPatientAppointments();
+        renderPatientTimeSlots();
+      }
+    } catch (_) {}
+  }, 60000);
 
   const modalBackdrop = document.getElementById("modal-backdrop");
   const modalClose = document.getElementById("modal-close");
