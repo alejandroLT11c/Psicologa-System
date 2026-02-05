@@ -3,20 +3,27 @@ const sqlite3 = require("sqlite3").verbose();
 const bcrypt = require("bcryptjs");
 const fs = require("fs");
 
-// Ruta a la base de datos: en Render DEBE usar DATABASE_PATH = /var/data (mismo path que el disco persistente)
-const dbDir = process.env.DATABASE_PATH || __dirname;
-
-// Asegurar que el directorio existe
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+// Ruta a la base de datos: en Render con disco usar DATABASE_PATH = /var/data; si no hay disco, usar ruta local
+function getDbDir() {
+  const preferred = process.env.DATABASE_PATH || __dirname;
+  try {
+    if (!fs.existsSync(preferred)) {
+      fs.mkdirSync(preferred, { recursive: true });
+    }
+    return preferred;
+  } catch (e) {
+    if (e.code === "EACCES" || e.code === "EPERM") {
+      console.warn(`No se puede usar ${preferred} (sin permiso), usando directorio local.`);
+      const fallback = path.join(__dirname, "data");
+      if (!fs.existsSync(fallback)) fs.mkdirSync(fallback, { recursive: true });
+      return fallback;
+    }
+    throw e;
+  }
 }
-
+const dbDir = getDbDir();
 const dbPath = path.join(dbDir, "database.sqlite");
-if (process.env.DATABASE_PATH) {
-  console.log(`Base de datos en disco persistente: ${dbPath}`);
-} else {
-  console.log(`Base de datos en ruta local (NO persistente): ${dbPath}`);
-}
+console.log(`Base de datos: ${dbPath}`);
 
 const db = new sqlite3.Database(dbPath);
 
